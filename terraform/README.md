@@ -14,7 +14,8 @@
 ## 前提条件
 
 - AWS CLI が設定済み
-- Terraform >= 1.0 がインストール済み
+- Terraform >= 1.2.0 がインストール済み
+- S3バケット（Terraformステート保存用）が作成済み
 - Lambda デプロイメントパッケージ `../dist/lambda_function.zip` が作成済み
 
 ## 使用方法
@@ -24,8 +25,14 @@
 ```bash
 # プロジェクトルートディレクトリで実行
 mkdir -p dist
-cd dist
-zip -r lambda_function.zip ../src/shopping_reminder/
+
+# shopping_reminder パッケージの内容をzipのトップレベルに配置
+cd src/shopping_reminder
+zip -r ../../dist/lambda_function.zip .
+cd ../..
+
+# 確認（zipのトップレベルに.pyファイルが配置されていることを確認）
+unzip -l dist/lambda_function.zip
 ```
 
 ### 2. Terraform変数の設定
@@ -41,8 +48,11 @@ notion_page_id     = "your_page_id_here"
 ### 3. Terraformの実行
 
 ```bash
-# 初期化
-terraform init
+# 初期化（S3バックエンド設定）
+terraform init \
+  -backend-config="bucket=<YOUR_BUCKET_NAME>" \
+  -backend-config="key=shopping-reminder/terraform.tfstate" \
+  -backend-config="region=ap-northeast-1"
 
 # 計画の確認
 terraform plan
@@ -113,3 +123,15 @@ terraform destroy
 - 適切なファイル分割
 - タグ付けの一貫性
 - アウトプットの提供
+- S3バックエンドによるステート管理
+- バージョン固定されたプロバイダー
+
+## 開発ワークフロー
+
+pre-commitフックが設定されており、以下が自動実行されます：
+
+- Terraformファイルの自動フォーマット (`terraform fmt`)
+- Terraformファイルの構文検証 (`terraform validate`)
+- AWS認証情報の漏洩チェック
+- Pythonコードのlintとtype check
+- 単体テストの実行（pre-merge-commit時）
