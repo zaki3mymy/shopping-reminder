@@ -1,8 +1,7 @@
 from typing import Dict, Any
 import pytest
-from datetime import datetime
 
-from shopping_reminder.models import ShoppingItem, NotionDatabaseItem, NotificationResult
+from src.shopping_reminder.models import ShoppingItem, NotionDatabaseItem, NotificationResult
 
 
 class TestShoppingItem:

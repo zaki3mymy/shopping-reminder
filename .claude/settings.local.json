@@ -14,7 +14,13 @@
       "Bash(mv:*)",
       "Bash(uv run:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(PYTHONPATH=. uv run pytest tests/shopping_reminder/test_models.py -v)",
+      "Bash(PYTHONPATH=. uv run pytest tests/shopping_reminder/test_config.py -v)",
+      "Bash(PYTHONPATH=. uv run pytest tests/shopping_reminder/test_notion_client.py -v)",
+      "Bash(PYTHONPATH=. uv run pytest tests/shopping_reminder/test_lambda_handler.py -v)",
+      "Bash(terraform fmt:*)",
+      "Bash(terraform validate:*)"
     ],
     "deny": [],
     "ask": []
