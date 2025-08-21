@@ -5,3 +5,32 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
+
+[dependency-groups]
+dev = [
+    "mypy>=1.17.1",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.9",
+]
+
+# linter / formatter
+[tool.ruff]
+line-length = 100
+indent-width = 4
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+[tool.ruff.lint.isort]
+known-first-party = []
+
+# type-checker
+[tool.mypy]
+check_untyped_defs = true  # 関数の引数/戻り値の型をチェックする
+
+# test
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--cov src --cov-branch --cov-report term-missing --cov-report xml --cov-report html"
