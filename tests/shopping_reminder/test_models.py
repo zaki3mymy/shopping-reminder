@@ -27,6 +27,22 @@ class TestShoppingItem:
         item2 = ShoppingItem(id="456", name="パン", checked=True)
         assert item1 != item2
 
+    def test_shopping_item_equality_with_non_shopping_item(self) -> None:
+        """異なる型のオブジェクトとの比較テスト（行13をカバー）"""
+        item = ShoppingItem(id="123", name="牛乳", checked=False)
+
+        # 文字列との比較
+        assert item.__eq__("not a shopping item") == NotImplemented
+
+        # 数値との比較
+        assert item.__eq__(123) == NotImplemented
+
+        # 辞書との比較
+        assert item.__eq__({"id": "123", "name": "牛乳"}) == NotImplemented
+
+        # Noneとの比較
+        assert item.__eq__(None) == NotImplemented
+
 
 class TestNotionDatabaseItem:
     def test_notion_database_item_creation(self) -> None:

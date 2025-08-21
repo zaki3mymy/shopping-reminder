@@ -136,6 +136,53 @@ class TestNotionClient:
         assert "Unauthorized" in str(exc_info.value)
 
     @patch("urllib.request.urlopen")
+    def test_http_error_without_fp(self, mock_urlopen: Mock) -> None:
+        """HTTPError で e.fp が None の場合のテスト（行136-137をカバー）"""
+        import urllib.error
+
+        # HTTPErrorのモックを作成し、fpをNoneに設定
+        http_error = urllib.error.HTTPError(
+            url="https://test.com",
+            code=500,
+            msg="Internal Server Error",
+            hdrs={},
+            fp=None
+        )
+        mock_urlopen.side_effect = http_error
+
+        with pytest.raises(NotionAPIError) as exc_info:
+            self.client.query_unchecked_items()
+
+        assert "HTTP error 500" in str(exc_info.value)
+
+    @patch("urllib.request.urlopen")
+    def test_url_error(self, mock_urlopen: Mock) -> None:
+        """URLError の場合のテスト（行139をカバー）"""
+        import urllib.error
+
+        url_error = urllib.error.URLError("Connection refused")
+        mock_urlopen.side_effect = url_error
+
+        with pytest.raises(NotionAPIError) as exc_info:
+            self.client.query_unchecked_items()
+
+        assert "URL error" in str(exc_info.value)
+        assert "Connection refused" in str(exc_info.value)
+
+    @patch("urllib.request.urlopen")
+    def test_json_decode_error(self, mock_urlopen: Mock) -> None:
+        """JSONDecodeError の場合のテスト（行141をカバー）"""
+        mock_response = Mock()
+        mock_response.read.return_value = b'invalid json{'
+        mock_response.getcode.return_value = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+
+        with pytest.raises(NotionAPIError) as exc_info:
+            self.client.query_unchecked_items()
+
+        assert "JSON decode error" in str(exc_info.value)
+
+    @patch("urllib.request.urlopen")
     def test_create_comment_success(self, mock_urlopen: Mock) -> None:
         mock_response_data = {
             "id": "comment123",

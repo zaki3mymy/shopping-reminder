@@ -94,6 +94,30 @@ class TestConfig:
             Config.from_dict(config_dict)
         assert "NOTION_API_KEY" in str(exc_info.value)
 
+    def test_config_from_dict_with_integer_values(self) -> None:
+        """数値が渡された場合の文字列変換テスト（行50をカバー）"""
+        config_dict = {
+            "NOTION_API_KEY": 123456,  # 数値
+            "NOTION_DATABASE_ID": "database-456",
+            "NOTION_PAGE_ID": "page-456"
+        }
+        config = Config.from_dict(config_dict)
+        assert config.notion_api_key == "123456"  # 文字列に変換される
+        assert config.notion_database_id == "database-456"
+        assert config.notion_page_id == "page-456"
+
+    def test_config_from_dict_with_whitespace_only_value(self) -> None:
+        """空白のみの値の場合のテスト（行49をカバー）"""
+        config_dict = {
+            "NOTION_API_KEY": "   ",  # 空白のみ
+            "NOTION_DATABASE_ID": "database-456",
+            "NOTION_PAGE_ID": "page-456"
+        }
+        with pytest.raises(ConfigError) as exc_info:
+            Config.from_dict(config_dict)
+        assert "NOTION_API_KEY" in str(exc_info.value)
+        assert "cannot be empty" in str(exc_info.value)
+
     def test_config_str_representation_hides_sensitive_data(self) -> None:
         with patch.dict(os.environ, {
             "NOTION_API_KEY": "secret-key-123",
