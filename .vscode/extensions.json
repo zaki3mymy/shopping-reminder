@@ -1,0 +1,36 @@
+{
+  "recommendations": [
+    // Utility
+    "sohamkamani.code-eol",
+    "oderwat.indent-rainbow",
+    "mechatroner.rainbow-csv",
+    "ryanluker.vscode-coverage-gutters",
+    "vscode-icons-team.vscode-icons",
+    "streetsidesoftware.code-spell-checker",
+    "MS-CEINTL.vscode-language-pack-ja",
+    "redhat.vscode-yaml",
+    "ms-vscode.live-server",
+    "be5invis.toml",
+    // AI
+    "Anthropic.claude-code",
+    // Git / GitHub
+    "mhutchie.git-graph",
+    "github.vscode-github-actions",
+    "me-dutour-mathieu.vscode-github-actions",
+    // Markdown
+    "shd101wyy.markdown-preview-enhanced",
+    "bierner.markdown-mermaid",
+    "bpruitt-goddard.mermaid-markdown-syntax-highlighting",
+    "DavidAnson.vscode-markdownlint",
+    // Terraform
+    "hashicorp.terraform",
+    // Docker
+    "ms-azuretools.vscode-docker",
+    // Python
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.mypy-type-checker",
+    "charliermarsh.ruff",
+    "njpwerner.autodocstring"
+  ]
+}
