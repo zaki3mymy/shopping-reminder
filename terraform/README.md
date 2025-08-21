@@ -10,6 +10,7 @@
 - **EventBridge**: 毎日17:00（JST）にLambdaを実行するスケジュール
 - **CloudWatch Logs**: Lambda実行ログの保存
 - **IAM Role**: Lambda実行に必要な最小限の権限
+- **Resource Groups**: AWS リソースの管理・監視を簡素化
 
 ## 前提条件
 
@@ -69,6 +70,10 @@ terraform output
 
 # Lambda実行テスト
 aws lambda invoke --function-name shopping-reminder response.json
+
+# リソースグループの確認
+aws resource-groups list-groups
+aws resource-groups get-group --group-name shopping-reminder-resources
 ```
 
 ## 変数一覧
@@ -83,12 +88,52 @@ aws lambda invoke --function-name shopping-reminder response.json
 | `lambda_timeout` | タイムアウト（秒） | `30` | No |
 | `lambda_memory_size` | メモリサイズ（MB） | `128` | No |
 | `cloudwatch_log_retention_days` | ログ保持期間（日） | `14` | No |
+| `resource_group_name` | リソースグループ名 | `shopping-reminder-resources` | No |
+| `environment` | 環境名 | `production` | No |
+| `create_comprehensive_resource_group` | 包括的リソースグループの作成 | `false` | No |
 
 ## セキュリティ考慮事項
 
 - Notion API キーは`sensitive = true`で保護されています
 - IAM ロールは最小権限の原則に従い、必要な権限のみを付与
 - CloudWatch Logsのみアクセス可能
+
+## AWS Resource Groups について
+
+このTerraform設定では、作成されたAWSリソースを効率的に管理するためにResource Groupsを使用します。
+
+### 作成されるリソースグループ
+
+1. **メインリソースグループ** (`shopping-reminder-resources`)
+   - Lambda、EventBridge、CloudWatch Logs、IAMロールを含む
+   - プロジェクトタグでフィルタリング
+
+2. **包括的リソースグループ** (`shopping-reminder-resources-all`) - オプション
+   - プロジェクトに関連する全てのAWSリソースを含む
+   - `create_comprehensive_resource_group = true` で有効化
+
+### リソースグループの利点
+
+- **一元管理**: 関連リソースをグループ化して管理
+- **監視の簡素化**: CloudWatchでグループ単位での監視
+- **コスト分析**: 請求情報をプロジェクト単位で分析
+- **権限管理**: リソースグループに対する一括操作
+
+### 使用方法
+
+```bash
+# リソースグループ一覧表示
+aws resource-groups list-groups
+
+# 特定グループの詳細確認
+aws resource-groups get-group --group-name shopping-reminder-resources
+
+# グループ内のリソース一覧
+aws resource-groups list-group-resources --group-name shopping-reminder-resources
+
+# AWS コンソールでの確認
+# https://console.aws.amazon.com/resource-groups/
+```
 
 ## トラブルシューティング
 
@@ -106,6 +151,15 @@ IAMロールの権限を確認し、必要に応じて追加：
 
 ```bash
 aws iam get-role --role-name shopping-reminder-role
+```
+
+### リソースグループが空の場合
+
+タグが正しく設定されているか確認：
+
+```bash
+# リソースのタグ確認
+aws lambda get-function --function-name shopping-reminder --query 'Tags'
 ```
 
 ## リソース削除

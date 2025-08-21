@@ -32,3 +32,24 @@ output "iam_role_arn" {
   description = "ARN of the IAM role used by Lambda"
   value       = aws_iam_role.lambda_role.arn
 }
+
+# Resource Groups outputs
+output "resource_group_name" {
+  description = "Name of the main resource group"
+  value       = aws_resourcegroups_group.shopping_reminder.name
+}
+
+output "resource_group_arn" {
+  description = "ARN of the main resource group"
+  value       = aws_resourcegroups_group.shopping_reminder.arn
+}
+
+output "comprehensive_resource_group_name" {
+  description = "Name of the comprehensive resource group (if created)"
+  value       = var.create_comprehensive_resource_group ? aws_resourcegroups_group.shopping_reminder_all[0].name : null
+}
+
+output "comprehensive_resource_group_arn" {
+  description = "ARN of the comprehensive resource group (if created)"
+  value       = var.create_comprehensive_resource_group ? aws_resourcegroups_group.shopping_reminder_all[0].arn : null
+}
