@@ -2,6 +2,15 @@ import os
 from dataclasses import dataclass
 from typing import Dict, Any
 
+try:
+    # Lambda環境での絶対インポート
+    from logger import get_logger  # type: ignore
+except ImportError:
+    # 開発環境での相対インポート
+    from .logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class ConfigError(Exception):
     """設定に関するエラー"""
@@ -17,9 +26,18 @@ class Config:
 
     def __init__(self) -> None:
         """環境変数から設定を読み込み"""
+        logger.info("Loading configuration from environment variables")
+
         self.notion_api_key = self._get_required_env_var("NOTION_API_KEY")
+        logger.info(f"NOTION_API_KEY loaded (length: {len(self.notion_api_key)} chars)")
+
         self.notion_database_id = self._get_required_env_var("NOTION_DATABASE_ID")
+        logger.info(f"NOTION_DATABASE_ID: {self.notion_database_id}")
+
         self.notion_page_id = self._get_required_env_var("NOTION_PAGE_ID")
+        logger.info(f"NOTION_PAGE_ID: {self.notion_page_id}")
+
+        logger.info("Configuration loaded successfully")
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "Config":
@@ -34,9 +52,12 @@ class Config:
 
     def _get_required_env_var(self, key: str) -> str:
         """必須の環境変数を取得"""
+        logger.info(f"Retrieving environment variable: {key}")
         value = os.environ.get(key)
         if not value or not value.strip():
+            logger.error(f"Environment variable {key} is missing or empty")
             raise ConfigError(f"Environment variable {key} is required and cannot be empty")
+        logger.info(f"Environment variable {key} retrieved successfully")
         return value.strip()
 
     @staticmethod
