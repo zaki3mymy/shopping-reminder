@@ -1,10 +1,15 @@
 import os
-import logging
 from dataclasses import dataclass
 from typing import Dict, Any
 
-# ログ設定
-logger = logging.getLogger(__name__)
+try:
+    # Lambda環境での絶対インポート
+    from logger import get_logger  # type: ignore
+except ImportError:
+    # 開発環境での相対インポート
+    from .logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ConfigError(Exception):
