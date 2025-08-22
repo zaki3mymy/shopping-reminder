@@ -9,8 +9,7 @@ resource "aws_resourcegroups_group" "shopping_reminder" {
       ResourceTypeFilters = [
         "AWS::Lambda::Function",
         "AWS::Events::Rule",
-        "AWS::Logs::LogGroup",
-        "AWS::IAM::Role"
+        "AWS::Logs::LogGroup"
       ],
       TagFilters = [
         {

@@ -105,8 +105,9 @@ aws resource-groups get-group --group-name shopping-reminder-resources
 ### 作成されるリソースグループ
 
 1. **メインリソースグループ** (`shopping-reminder-resources`)
-   - Lambda、EventBridge、CloudWatch Logs、IAMロールを含む
+   - Lambda、EventBridge、CloudWatch Logsを含む
    - プロジェクトタグでフィルタリング
+   - 注意: IAMロールはResource Groupsでサポートされていないため除外
 
 2. **包括的リソースグループ** (`shopping-reminder-resources-all`) - オプション
    - プロジェクトに関連する全てのAWSリソースを含む
