@@ -53,3 +53,21 @@ variable "tags" {
     ManagedBy   = "terraform"
   }
 }
+
+variable "resource_group_name" {
+  description = "Name of the AWS Resource Group"
+  type        = string
+  default     = "shopping-reminder-resources"
+}
+
+variable "environment" {
+  description = "Environment name (e.g., production, staging, development)"
+  type        = string
+  default     = "production"
+}
+
+variable "create_comprehensive_resource_group" {
+  description = "Whether to create a comprehensive resource group that includes all AWS resources"
+  type        = bool
+  default     = false
+}
