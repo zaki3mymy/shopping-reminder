@@ -50,7 +50,7 @@ class Config:
         logger.info(f"Retrieving environment variable: {key}")
         value = os.environ.get(key)
         if not value or not value.strip():
-            logger.exception(f"Environment variable {key} is missing or empty")
+            logger.error(f"Environment variable {key} is missing or empty")
             raise ConfigError(f"Environment variable {key} is required and cannot be empty")
         logger.info(f"Environment variable {key} retrieved successfully")
         return value.strip()
