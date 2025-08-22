@@ -153,14 +153,17 @@ class NotionClient:
             url,
             data=json_data,
             headers={
-                "Authorization": f"Bearer {self.config.notion_api_key[:10]}...",  # マスクして表示
+                "Authorization": f"Bearer {self.config.notion_api_key}",
                 "Content-Type": "application/json",
                 "Notion-Version": "2022-06-28"
             },
             method="POST"
         )
 
-        logger.info(f"Request headers: {dict(request.headers)}")
+        # ログ出力時のみAPIキーをマスク
+        headers_for_log = dict(request.headers)
+        headers_for_log["Authorization"] = f"Bearer {self.config.notion_api_key[:10]}..."
+        logger.info(f"Request headers: {headers_for_log}")
 
         try:
             logger.info("Sending request to Notion API...")
