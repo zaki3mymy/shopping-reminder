@@ -3,8 +3,14 @@ import urllib.request
 import urllib.parse
 from typing import List, Dict, Any
 
-from .models import ShoppingItem, NotionDatabaseItem, NotificationResult
-from .config import Config
+try:
+    # Lambda環境での絶対インポート
+    from models import ShoppingItem, NotionDatabaseItem, NotificationResult  # type: ignore
+    from config import Config  # type: ignore
+except ImportError:
+    # 開発環境での相対インポート
+    from .models import ShoppingItem, NotionDatabaseItem, NotificationResult
+    from .config import Config
 
 
 class NotionAPIError(Exception):
