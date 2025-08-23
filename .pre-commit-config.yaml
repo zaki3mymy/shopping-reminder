@@ -31,6 +31,22 @@ repos:
         language: system
         types: [text]
 
+    -   id: terraform-fmt
+        name: Format Terraform files
+        entry: terraform fmt -check
+        language: system
+        types: [file]
+        files: \.tf$
+        args: [-write=true]
+
+    -   id: terraform-validate
+        name: Validate Terraform files
+        entry: bash -c "cd terraform && terraform validate"
+        language: system
+        types: [file]
+        files: \.tf$
+        pass_filenames: false
+
     -   id: unit-test
         name: Run unit tests
         entry: uv run pytest --cov src --cov-branch --cov-report term-missing --cov-report xml --cov-report html
