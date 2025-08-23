@@ -71,3 +71,15 @@ variable "create_comprehensive_resource_group" {
   type        = bool
   default     = false
 }
+
+variable "source_dir" {
+  description = "Path to the source directory containing Lambda function code"
+  type        = string
+  default     = "../src/shopping_reminder"
+}
+
+variable "output_zip_path" {
+  description = "Path where the Lambda deployment zip file will be created"
+  type        = string
+  default     = "../dist/lambda_function.zip"
+}

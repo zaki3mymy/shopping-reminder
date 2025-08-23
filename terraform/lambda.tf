@@ -8,7 +8,7 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
 
 # Lambda function
 resource "aws_lambda_function" "shopping_reminder" {
-  filename      = "../dist/lambda_function.zip"
+  filename      = data.archive_file.lambda_zip.output_path
   function_name = var.lambda_function_name
   role          = aws_iam_role.lambda_role.arn
   handler       = "lambda_handler.handler"
@@ -16,7 +16,7 @@ resource "aws_lambda_function" "shopping_reminder" {
   timeout       = var.lambda_timeout
   memory_size   = var.lambda_memory_size
 
-  source_code_hash = filebase64sha256("../dist/lambda_function.zip")
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   environment {
     variables = {
