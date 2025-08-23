@@ -17,23 +17,18 @@
 - AWS CLI が設定済み
 - Terraform >= 1.2.0 がインストール済み
 - S3バケット（Terraformステート保存用）が作成済み
-- Lambda デプロイメントパッケージ `../dist/lambda_function.zip` が作成済み
+- ソースコードディレクトリ `../src/shopping_reminder/` が存在すること
 
 ## 使用方法
 
-### 1. Lambdaパッケージの作成
+### 1. ソースコード確認
 
 ```bash
-# プロジェクトルートディレクトリで実行
-mkdir -p dist
+# プロジェクト構造の確認
+ls -la src/shopping_reminder/
 
-# shopping_reminder パッケージの内容をzipのトップレベルに配置
-cd src/shopping_reminder
-zip -r ../../dist/lambda_function.zip .
-cd ../..
-
-# 確認（zipのトップレベルに.pyファイルが配置されていることを確認）
-unzip -l dist/lambda_function.zip
+# 注意: Lambdaパッケージの作成はTerraformのarchive_fileデータソースで自動化されています
+# terraform apply実行時に自動的に dist/lambda_function.zip が作成されます
 ```
 
 ### 2. Terraform変数の設定
@@ -91,6 +86,8 @@ aws resource-groups get-group --group-name shopping-reminder-resources
 | `resource_group_name` | リソースグループ名 | `shopping-reminder-resources` | No |
 | `environment` | 環境名 | `production` | No |
 | `create_comprehensive_resource_group` | 包括的リソースグループの作成 | `false` | No |
+| `source_dir` | ソースコードディレクトリ | `../src/shopping_reminder` | No |
+| `output_zip_path` | Lambda zipファイル出力先 | `../dist/lambda_function.zip` | No |
 
 ## セキュリティ考慮事項
 
