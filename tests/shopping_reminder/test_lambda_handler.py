@@ -21,7 +21,7 @@ class TestShoppingReminderProcessor:
         assert self.processor.config == self.config
         assert self.processor.notion_client is not None
 
-    @patch("src.shopping_reminder.lambda_handler.NotionClient")
+    @patch("notion_client.NotionClient")
     def test_process_with_unchecked_items(self, mock_notion_client_class: Mock) -> None:
         # モックの設定
         mock_client = Mock()
@@ -45,7 +45,7 @@ class TestShoppingReminderProcessor:
         mock_client.query_unchecked_items.assert_called_once()
         mock_client.create_comment.assert_called_once_with(unchecked_items)
 
-    @patch("src.shopping_reminder.lambda_handler.NotionClient")
+    @patch("notion_client.NotionClient")
     def test_process_with_no_unchecked_items(self, mock_notion_client_class: Mock) -> None:
         mock_client = Mock()
         mock_notion_client_class.return_value = mock_client
@@ -64,7 +64,7 @@ class TestShoppingReminderProcessor:
         mock_client.query_unchecked_items.assert_called_once()
         mock_client.create_comment.assert_called_once_with([])
 
-    @patch("src.shopping_reminder.lambda_handler.NotionClient")
+    @patch("notion_client.NotionClient")
     def test_process_with_query_error(self, mock_notion_client_class: Mock) -> None:
         mock_client = Mock()
         mock_notion_client_class.return_value = mock_client
@@ -78,7 +78,7 @@ class TestShoppingReminderProcessor:
         assert "処理中にエラーが発生しました" in result.message
         assert "データベースクエリエラー" in result.error
 
-    @patch("src.shopping_reminder.lambda_handler.NotionClient")
+    @patch("notion_client.NotionClient")
     def test_process_with_comment_creation_error(self, mock_notion_client_class: Mock) -> None:
         mock_client = Mock()
         mock_notion_client_class.return_value = mock_client
@@ -100,7 +100,7 @@ class TestShoppingReminderProcessor:
 
 
 class TestLambdaHandler:
-    @patch("src.shopping_reminder.lambda_handler.Config")
+    @patch("config.Config")
     @patch("src.shopping_reminder.lambda_handler.ShoppingReminderProcessor")
     def test_handler_success(self, mock_processor_class: Mock, mock_config_class: Mock) -> None:
         # モックの設定
@@ -131,7 +131,7 @@ class TestLambdaHandler:
         mock_processor_class.assert_called_once_with(mock_config)
         mock_processor.process.assert_called_once()
 
-    @patch("src.shopping_reminder.lambda_handler.Config")
+    @patch("config.Config")
     def test_handler_config_error(self, mock_config_class: Mock) -> None:
         mock_config_class.side_effect = ConfigError("NOTION_API_KEY is required")
 
@@ -146,7 +146,7 @@ class TestLambdaHandler:
         assert "設定エラー" in body["message"]
         assert "NOTION_API_KEY is required" in body["error"]
 
-    @patch("src.shopping_reminder.lambda_handler.Config")
+    @patch("config.Config")
     @patch("src.shopping_reminder.lambda_handler.ShoppingReminderProcessor")
     def test_handler_processing_error(
         self,
@@ -175,7 +175,7 @@ class TestLambdaHandler:
         assert "処理中にエラーが発生しました" in body["message"]
         assert "データベースクエリエラー" in body["error"]
 
-    @patch("src.shopping_reminder.lambda_handler.Config")
+    @patch("config.Config")
     def test_handler_unexpected_error(self, mock_config_class: Mock) -> None:
         mock_config_class.side_effect = Exception("予期しないエラー")
 

@@ -1,18 +1,10 @@
 import json
 from typing import Dict, Any
 
-try:
-    # Lambda環境での絶対インポート
-    from config import Config, ConfigError  # type: ignore
-    from notion_client import NotionClient  # type: ignore
-    from models import NotificationResult  # type: ignore
-    from logger import get_logger  # type: ignore
-except ImportError:
-    # 開発環境での相対インポート
-    from .config import Config, ConfigError
-    from .notion_client import NotionClient
-    from .models import NotificationResult
-    from .logger import get_logger
+from config import Config, ConfigError  # type: ignore
+from notion_client import NotionClient  # type: ignore
+from models import NotificationResult  # type: ignore
+from logger import get_logger  # type: ignore
 
 logger = get_logger(__name__)
 
