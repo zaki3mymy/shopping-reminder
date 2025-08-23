@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Any
 
-from config import Config, ConfigError  # type: ignore
+from config import Config  # type: ignore
 from notion_client import NotionClient  # type: ignore
 from models import NotificationResult  # type: ignore
 from logger import get_logger  # type: ignore
@@ -92,25 +92,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }, ensure_ascii=False)
             }
 
-    except ConfigError as e:
-        logger.exception(f"Configuration error: {str(e)}")
-        return {
-            "statusCode": 400,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({
-                "success": False,
-                "message": "設定エラーが発生しました。",
-                "error": str(e)
-            }, ensure_ascii=False)
-        }
     except Exception as e:
-        logger.exception(f"Unexpected Lambda error: {str(e)}")
-        return {
-            "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({
-                "success": False,
-                "message": "予期しないエラーが発生しました。",
-                "error": str(e)
-            }, ensure_ascii=False)
-        }
+        if e.__class__.__name__ == 'ConfigError':
+            logger.exception(f"Configuration error: {str(e)}")
+            return {
+                "statusCode": 400,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({
+                    "success": False,
+                    "message": "設定エラーが発生しました。",
+                    "error": str(e)
+                }, ensure_ascii=False)
+            }
+        else:
+            logger.exception(f"Unexpected Lambda error: {str(e)}")
+            return {
+                "statusCode": 500,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({
+                    "success": False,
+                    "message": "予期しないエラーが発生しました。",
+                    "error": str(e)
+                }, ensure_ascii=False)
+            }
