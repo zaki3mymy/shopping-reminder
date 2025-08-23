@@ -33,7 +33,7 @@ repos:
 
     -   id: terraform-fmt
         name: Format Terraform files
-        entry: terraform fmt
+        entry: terraform fmt -check
         language: system
         types: [file]
         files: \.tf$
