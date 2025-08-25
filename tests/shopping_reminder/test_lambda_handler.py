@@ -131,20 +131,21 @@ class TestLambdaHandler:
         mock_processor_class.assert_called_once_with(mock_config)
         mock_processor.process.assert_called_once()
 
-    @patch("src.shopping_reminder.lambda_handler.Config")
-    def test_handler_config_error(self, mock_config_class: Mock) -> None:
-        mock_config_class.side_effect = ConfigError("NOTION_API_KEY is required")
+    def test_handler_config_error(self) -> None:
+        with patch("src.shopping_reminder.lambda_handler.Config") as mock_config, \
+             patch("src.shopping_reminder.lambda_handler.ConfigError", ConfigError):
+            mock_config.side_effect = ConfigError("NOTION_API_KEY is required")
 
-        event: Dict[str, Any] = {}
-        context = Mock()
+            event: Dict[str, Any] = {}
+            context = Mock()
 
-        response = handler(event, context)
+            response = handler(event, context)
 
-        assert response["statusCode"] == 400
-        body = json.loads(response["body"])
-        assert body["success"] is False
-        assert "設定エラー" in body["message"]
-        assert "NOTION_API_KEY is required" in body["error"]
+            assert response["statusCode"] == 400
+            body = json.loads(response["body"])
+            assert body["success"] is False
+            assert "設定エラー" in body["message"]
+            assert "NOTION_API_KEY is required" in body["error"]
 
     @patch("src.shopping_reminder.lambda_handler.Config")
     @patch("src.shopping_reminder.lambda_handler.ShoppingReminderProcessor")
