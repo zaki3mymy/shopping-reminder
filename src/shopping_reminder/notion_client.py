@@ -3,16 +3,10 @@ import urllib.request
 import urllib.parse
 from typing import List, Dict, Any
 
-try:
-    # Lambda環境での絶対インポート
-    from models import ShoppingItem, NotionDatabaseItem, NotificationResult  # type: ignore
-    from config import Config  # type: ignore
-    from logger import get_logger  # type: ignore
-except ImportError:
-    # 開発環境での相対インポート
-    from .models import ShoppingItem, NotionDatabaseItem, NotificationResult
-    from .config import Config
-    from .logger import get_logger
+# Lambda環境での絶対インポート
+from models import ShoppingItem, NotionDatabaseItem, NotificationResult
+from config import Config
+from logger import get_logger
 
 logger = get_logger(__name__)
 
