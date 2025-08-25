@@ -1,6 +1,26 @@
-# Shopping Reminder Infrastructure
+# Terraform Infrastructure
 
-このディレクトリにはAWS Lambdaで動作する日用品チェッカーのTerraform設定が含まれています。
+このディレクトリには、Shopping Reminder アプリケーション用のTerraformインフラストラクチャコードが含まれています。
+
+## 構成
+
+```
+terraform/
+├── modules/
+│   └── shopping-reminder/    # メインアプリケーションモジュール
+│       ├── main.tf          # リソース定義
+│       ├── variables.tf     # 変数定義
+│       └── outputs.tf       # 出力値定義
+├── environments/
+│   └── production/          # 本番環境設定
+│       ├── main.tf          # モジュール使用
+│       ├── variables.tf     # 環境変数定義
+│       ├── outputs.tf       # 出力値
+│       ├── providers.tf     # プロバイダー設定
+│       ├── versions.tf      # Terraform/プロバイダーバージョン
+│       └── terraform.tfvars # 環境固有の値
+└── README.md               # このファイル
+```
 
 ## 概要
 
@@ -12,52 +32,48 @@
 - **IAM Role**: Lambda実行に必要な最小限の権限
 - **Resource Groups**: AWS リソースの管理・監視を簡素化
 
-## 前提条件
+## デプロイメント
 
-- AWS CLI が設定済み
-- Terraform >= 1.2.0 がインストール済み
-- S3バケット（Terraformステート保存用）が作成済み
-- ソースコードディレクトリ `../src/shopping_reminder/` が存在すること
-
-## 使用方法
-
-### 1. ソースコード確認
+### 本番環境
 
 ```bash
-# プロジェクト構造の確認
-ls -la src/shopping_reminder/
+cd environments/production
 
-# 注意: Lambdaパッケージの作成はTerraformのarchive_fileデータソースで自動化されています
-# terraform apply実行時に自動的に dist/lambda_function.zip が作成されます
-```
-
-### 2. Terraform変数の設定
-
-`terraform.tfvars` ファイルを作成し、必要な変数を設定：
-
-```hcl
-notion_api_key     = "secret_api_key_here"
-notion_database_id = "your_database_id_here"
-notion_page_id     = "your_page_id_here"
-```
-
-### 3. Terraformの実行
-
-```bash
-# 初期化（S3バックエンド設定）
+# 初期化
 terraform init \
   -backend-config="bucket=<YOUR_BUCKET_NAME>" \
   -backend-config="key=shopping-reminder/terraform.tfstate" \
   -backend-config="region=ap-northeast-1"
 
-# 計画の確認
+# プランニング
 terraform plan
 
-# リソースの作成
+# デプロイ
 terraform apply
 ```
 
-### 4. デプロイ後の確認
+### terraform.tfvars の設定
+
+`environments/production/terraform.tfvars` に以下の値を設定してください：
+
+```hcl
+notion_api_key     = "secret_xxxxxxxxxxxx"
+notion_database_id = "database-id-here"
+notion_page_id     = "page-id-here"
+
+# オプション設定
+lambda_function_name              = "shopping-reminder"
+cloudwatch_log_retention_days     = 14
+create_comprehensive_resource_group = false
+
+tags = {
+  Project     = "shopping-reminder"
+  Environment = "production"
+  ManagedBy   = "terraform"
+}
+```
+
+## デプロイ後の確認
 
 ```bash
 # 作成されたリソースの確認
@@ -70,6 +86,34 @@ aws lambda invoke --function-name shopping-reminder response.json
 aws resource-groups list-groups
 aws resource-groups get-group --group-name shopping-reminder-resources
 ```
+
+## モジュール
+
+### shopping-reminder モジュール
+
+メインアプリケーションのAWSリソースを管理するモジュールです：
+
+- **Lambda関数**: メインアプリケーション実行
+- **EventBridge**: 日次スケジュール実行
+- **IAMロール**: Lambda実行権限
+- **CloudWatchロググループ**: ログ記録
+- **リソースグループ**: リソース管理
+
+#### 主要変数
+
+- `notion_api_key`: Notion API キー (sensitive)
+- `notion_database_id`: 監視対象データベースID
+- `notion_page_id`: コメント投稿先ページID
+- `lambda_function_name`: Lambda関数名
+- `schedule_expression`: 実行スケジュール (デフォルト: JST 17:00)
+
+#### 出力値
+
+- `lambda_function_arn`: Lambda関数ARN
+- `eventbridge_rule_arn`: EventBridge ルールARN
+- `cloudwatch_log_group_name`: CloudWatchロググループ名
+
+詳細は各モジュールの `variables.tf` と `outputs.tf` を参照してください。
 
 ## 変数一覧
 
@@ -86,8 +130,8 @@ aws resource-groups get-group --group-name shopping-reminder-resources
 | `resource_group_name` | リソースグループ名 | `shopping-reminder-resources` | No |
 | `environment` | 環境名 | `production` | No |
 | `create_comprehensive_resource_group` | 包括的リソースグループの作成 | `false` | No |
-| `source_dir` | ソースコードディレクトリ | `../src/shopping_reminder` | No |
-| `output_zip_path` | Lambda zipファイル出力先 | `../dist/lambda_function.zip` | No |
+| `source_dir` | ソースコードディレクトリ | `../../../src/shopping_reminder` | No |
+| `output_zip_path` | Lambda zipファイル出力先 | `../../../dist/lambda_function.zip` | No |
 
 ## セキュリティ考慮事項
 

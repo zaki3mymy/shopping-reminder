@@ -20,6 +20,16 @@ variable "lambda_function_name" {
   default     = "shopping-reminder"
 }
 
+variable "lambda_zip_path" {
+  description = "Path to the Lambda deployment zip file"
+  type        = string
+}
+
+variable "lambda_source_code_hash" {
+  description = "Base64 encoded hash of the Lambda zip file"
+  type        = string
+}
+
 variable "schedule_expression" {
   description = "EventBridge schedule expression for the reminder (JST 17:00 = UTC 08:00)"
   type        = string
@@ -48,9 +58,8 @@ variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
   default = {
-    Project     = "shopping-reminder"
-    Environment = "production"
-    ManagedBy   = "terraform"
+    Project   = "shopping-reminder"
+    ManagedBy = "terraform"
   }
 }
 
@@ -60,26 +69,8 @@ variable "resource_group_name" {
   default     = "shopping-reminder-resources"
 }
 
-variable "environment" {
-  description = "Environment name (e.g., production, staging, development)"
-  type        = string
-  default     = "production"
-}
-
 variable "create_comprehensive_resource_group" {
   description = "Whether to create a comprehensive resource group that includes all AWS resources"
   type        = bool
   default     = false
-}
-
-variable "source_dir" {
-  description = "Path to the source directory containing Lambda function code"
-  type        = string
-  default     = "../src/shopping_reminder"
-}
-
-variable "output_zip_path" {
-  description = "Path where the Lambda deployment zip file will be created"
-  type        = string
-  default     = "../dist/lambda_function.zip"
 }
