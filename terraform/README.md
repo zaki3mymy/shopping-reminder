@@ -60,17 +60,6 @@ terraform apply
 notion_api_key     = "secret_xxxxxxxxxxxx"
 notion_database_id = "database-id-here"
 notion_page_id     = "page-id-here"
-
-# オプション設定
-lambda_function_name              = "shopping-reminder"
-cloudwatch_log_retention_days     = 14
-create_comprehensive_resource_group = false
-
-tags = {
-  Project     = "shopping-reminder"
-  Environment = "production"
-  ManagedBy   = "terraform"
-}
 ```
 
 ## デプロイ後の確認
