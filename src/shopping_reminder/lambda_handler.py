@@ -46,9 +46,7 @@ class ShoppingReminderProcessor:
         except Exception as e:
             logger.exception(f"Unexpected error during processing: {str(e)}")
             return NotificationResult(
-                success=False,
-                message="処理中にエラーが発生しました。",
-                error=str(e)
+                success=False, message="処理中にエラーが発生しました。", error=str(e)
             )
 
 
@@ -56,7 +54,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """AWS Lambda のエントリーポイント"""
     logger.info("Lambda handler started")
     logger.info(f"Event: {json.dumps(event) if event else 'No event data'}")
-    logger.info(f"Request ID: {getattr(context, 'aws_request_id', 'No request ID available') if context else 'No context'}")
+    logger.info(
+        f"Request ID: {getattr(context, 'aws_request_id', 'No request ID available') if context else 'No context'}"
+    )
 
     try:
         # 1. 設定の読み込み
@@ -75,21 +75,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             return {
                 "statusCode": 200,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "success": True,
-                    "message": result.message
-                }, ensure_ascii=False)
+                "body": json.dumps(
+                    {"success": True, "message": result.message}, ensure_ascii=False
+                ),
             }
         else:
             logger.error("Lambda execution completed with errors")
             return {
                 "statusCode": 500,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "success": False,
-                    "message": result.message,
-                    "error": result.error
-                }, ensure_ascii=False)
+                "body": json.dumps(
+                    {"success": False, "message": result.message, "error": result.error},
+                    ensure_ascii=False,
+                ),
             }
 
     except ConfigError as e:
@@ -97,20 +95,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return {
             "statusCode": 400,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({
-                "success": False,
-                "message": "設定エラーが発生しました。",
-                "error": str(e)
-            }, ensure_ascii=False)
+            "body": json.dumps(
+                {"success": False, "message": "設定エラーが発生しました。", "error": str(e)},
+                ensure_ascii=False,
+            ),
         }
     except Exception as e:
         logger.exception(f"Unexpected Lambda error: {str(e)}")
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({
-                "success": False,
-                "message": "予期しないエラーが発生しました。",
-                "error": str(e)
-            }, ensure_ascii=False)
+            "body": json.dumps(
+                {"success": False, "message": "予期しないエラーが発生しました。", "error": str(e)},
+                ensure_ascii=False,
+            ),
         }

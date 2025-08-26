@@ -11,11 +11,13 @@ from src.shopping_reminder.config import Config
 class TestNotionClient:
     def setup_method(self) -> None:
         """各テストメソッドの前に実行される"""
-        self.config = Config.from_dict({
-            "NOTION_API_KEY": "secret_test_key",
-            "NOTION_DATABASE_ID": "test_database_id",
-            "NOTION_PAGE_ID": "test_page_id"
-        })
+        self.config = Config.from_dict(
+            {
+                "NOTION_API_KEY": "secret_test_key",
+                "NOTION_DATABASE_ID": "test_database_id",
+                "NOTION_PAGE_ID": "test_page_id",
+            }
+        )
         self.client = NotionClient(self.config)
 
     def test_notion_client_initialization(self) -> None:
@@ -30,18 +32,18 @@ class TestNotionClient:
                     "id": "item1",
                     "properties": {
                         "名前": {"title": [{"text": {"content": "牛乳"}}]},
-                        "完了": {"checkbox": False}
-                    }
+                        "完了": {"checkbox": False},
+                    },
                 },
                 {
                     "id": "item2",
                     "properties": {
                         "名前": {"title": [{"text": {"content": "パン"}}]},
-                        "完了": {"checkbox": False}
-                    }
-                }
+                        "完了": {"checkbox": False},
+                    },
+                },
             ],
-            "has_more": False
+            "has_more": False,
         }
 
         mock_response = Mock()
@@ -61,10 +63,7 @@ class TestNotionClient:
 
     @patch("urllib.request.urlopen")
     def test_query_unchecked_items_empty_results(self, mock_urlopen: Mock) -> None:
-        mock_response_data = {
-            "results": [],
-            "has_more": False
-        }
+        mock_response_data = {"results": [], "has_more": False}
 
         mock_response = Mock()
         mock_response.read.return_value = json.dumps(mock_response_data).encode("utf-8")
@@ -83,12 +82,12 @@ class TestNotionClient:
                     "id": "item1",
                     "properties": {
                         "名前": {"title": [{"text": {"content": "牛乳"}}]},
-                        "完了": {"checkbox": False}
-                    }
+                        "完了": {"checkbox": False},
+                    },
                 }
             ],
             "has_more": True,
-            "next_cursor": "cursor123"
+            "next_cursor": "cursor123",
         }
 
         # 2番目のページ
@@ -98,11 +97,11 @@ class TestNotionClient:
                     "id": "item2",
                     "properties": {
                         "名前": {"title": [{"text": {"content": "パン"}}]},
-                        "完了": {"checkbox": False}
-                    }
+                        "完了": {"checkbox": False},
+                    },
                 }
             ],
-            "has_more": False
+            "has_more": False,
         }
 
         # モックの設定：複数のレスポンスを順番に返す
@@ -142,11 +141,7 @@ class TestNotionClient:
 
         # HTTPErrorのモックを作成し、fpをNoneに設定
         http_error = urllib.error.HTTPError(
-            url="https://test.com",
-            code=500,
-            msg="Internal Server Error",
-            hdrs={},
-            fp=None
+            url="https://test.com", code=500, msg="Internal Server Error", hdrs={}, fp=None
         )
         mock_urlopen.side_effect = http_error
 
@@ -173,7 +168,7 @@ class TestNotionClient:
     def test_json_decode_error(self, mock_urlopen: Mock) -> None:
         """JSONDecodeError の場合のテスト（行141をカバー）"""
         mock_response = Mock()
-        mock_response.read.return_value = b'invalid json{'
+        mock_response.read.return_value = b"invalid json{"
         mock_response.getcode.return_value = 200
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
@@ -187,7 +182,7 @@ class TestNotionClient:
         mock_response_data = {
             "id": "comment123",
             "parent": {"page_id": "test_page_id"},
-            "created_time": "2023-01-01T00:00:00.000Z"
+            "created_time": "2023-01-01T00:00:00.000Z",
         }
 
         mock_response = Mock()
@@ -195,10 +190,7 @@ class TestNotionClient:
         mock_response.getcode.return_value = 200
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
-        items = [
-            ShoppingItem("1", "牛乳", False),
-            ShoppingItem("2", "パン", False)
-        ]
+        items = [ShoppingItem("1", "牛乳", False), ShoppingItem("2", "パン", False)]
         result = self.client.create_comment(items)
 
         assert result.success is True
@@ -233,10 +225,7 @@ class TestNotionClient:
     def test_build_filter_for_unchecked_items(self) -> None:
         filter_obj = self.client._build_filter_for_unchecked_items()
 
-        expected_filter = {
-            "property": "完了",
-            "checkbox": {"equals": False}
-        }
+        expected_filter = {"property": "完了", "checkbox": {"equals": False}}
         assert filter_obj == expected_filter
 
     def test_format_comment_message_single_item(self) -> None:
@@ -250,7 +239,7 @@ class TestNotionClient:
         items = [
             ShoppingItem("1", "牛乳", False),
             ShoppingItem("2", "パン", False),
-            ShoppingItem("3", "卵", False)
+            ShoppingItem("3", "卵", False),
         ]
         message = self.client._format_comment_message(items)
 

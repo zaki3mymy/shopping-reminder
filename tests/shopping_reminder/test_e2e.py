@@ -57,15 +57,17 @@ class TestE2E:
 
     def _has_test_credentials(self) -> bool:
         """テスト用の認証情報が設定されているかを確認"""
-        return all([
-            os.environ.get("NOTION_API_KEY_TEST"),
-            os.environ.get("NOTION_DATABASE_ID_TEST"),
-            os.environ.get("NOTION_PAGE_ID_TEST")
-        ])
+        return all(
+            [
+                os.environ.get("NOTION_API_KEY_TEST"),
+                os.environ.get("NOTION_DATABASE_ID_TEST"),
+                os.environ.get("NOTION_PAGE_ID_TEST"),
+            ]
+        )
 
     @pytest.mark.skipif(
         not os.environ.get("NOTION_API_KEY_TEST"),
-        reason="Test requires NOTION_API_KEY_TEST environment variable"
+        reason="Test requires NOTION_API_KEY_TEST environment variable",
     )
     def test_config_loading_with_test_credentials(self) -> None:
         """テスト用認証情報での設定読み込みテスト"""
@@ -79,7 +81,7 @@ class TestE2E:
 
     @pytest.mark.skipif(
         not os.environ.get("NOTION_API_KEY_TEST"),
-        reason="Test requires NOTION_API_KEY_TEST environment variable"
+        reason="Test requires NOTION_API_KEY_TEST environment variable",
     )
     def test_lambda_handler_integration(self) -> None:
         """Lambda ハンドラーの統合テスト"""
@@ -109,6 +111,7 @@ class TestE2E:
 
         # レスポンスボディをパース
         import json
+
         body = json.loads(response["body"])
 
         assert "success" in body
@@ -139,7 +142,7 @@ class TestE2E:
 
         try:
             event: Dict[str, Any] = {}
-            context = type('MockContext', (), {'function_name': 'test'})()
+            context = type("MockContext", (), {"function_name": "test"})()
 
             response = handler(event, context)
 
@@ -147,6 +150,7 @@ class TestE2E:
             assert response["statusCode"] == 400
 
             import json
+
             body = json.loads(response["body"])
             assert body["success"] is False
             assert "設定エラー" in body["message"]
@@ -159,7 +163,7 @@ class TestE2E:
 
     @pytest.mark.skipif(
         not os.environ.get("NOTION_API_KEY_TEST"),
-        reason="Test requires NOTION_API_KEY_TEST environment variable"
+        reason="Test requires NOTION_API_KEY_TEST environment variable",
     )
     def test_notion_client_integration(self) -> None:
         """Notion クライアントの統合テスト"""
@@ -177,16 +181,18 @@ class TestE2E:
             assert isinstance(items, list)
             # 各項目がShoppingItemのインスタンスであることを確認
             from src.shopping_reminder.models import ShoppingItem
+
             for item in items:
                 assert isinstance(item, ShoppingItem)
-                assert hasattr(item, 'id')
-                assert hasattr(item, 'name')
-                assert hasattr(item, 'checked')
+                assert hasattr(item, "id")
+                assert hasattr(item, "name")
+                assert hasattr(item, "checked")
                 assert isinstance(item.checked, bool)
 
         except Exception as e:
             # API エラーの場合は適切な例外がスローされることを確認
             from src.shopping_reminder.notion_client import NotionAPIError
+
             if not isinstance(e, NotionAPIError):
                 # NotionAPIError以外の例外は再発生させる
                 raise
@@ -194,11 +200,7 @@ class TestE2E:
     def test_e2e_documentation(self) -> None:
         """E2Eテストのドキュメンテーション確認"""
         # このテストは必要な環境変数についてドキュメント化する
-        required_vars = [
-            "NOTION_API_KEY_TEST",
-            "NOTION_DATABASE_ID_TEST",
-            "NOTION_PAGE_ID_TEST"
-        ]
+        required_vars = ["NOTION_API_KEY_TEST", "NOTION_DATABASE_ID_TEST", "NOTION_PAGE_ID_TEST"]
 
         missing_vars = []
         for var in required_vars:
