@@ -7,7 +7,6 @@ on:
     branches: [ main ]
 
 env:
-  UV_VERSION: "0.5.9"
   PYTHON_VERSION: "3.13"
 
 jobs:
@@ -21,7 +20,6 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
-        version: ${{ env.UV_VERSION }}
         enable-cache: true
 
     - name: Set up Python
@@ -46,7 +44,6 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
-        version: ${{ env.UV_VERSION }}
         enable-cache: true
 
     - name: Set up Python
@@ -68,7 +65,6 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
-        version: ${{ env.UV_VERSION }}
         enable-cache: true
 
     - name: Set up Python
@@ -78,14 +74,15 @@ jobs:
       run: uv sync --dev
 
     - name: Run tests
-      run: uv run pytest --cov-report=xml --cov-report=term
+      run: uv run pytest --cov-report=html --cov-report=term
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
-        token: ${{ secrets.CODECOV_TOKEN }}
+        name: coverage-report
+        path: htmlcov/
+        retention-days: 30
 
   terraform-validate:
     runs-on: ubuntu-latest

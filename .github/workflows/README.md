@@ -13,7 +13,7 @@
 **ジョブ**:
 1. **lint-and-format**: ruffによるコードリント・フォーマットチェック
 2. **type-check**: mypyによる型チェック
-3. **test**: pytestによるテスト実行（カバレッジ付き）
+3. **test**: pytestによるテスト実行（カバレッジレポートをGitHub artifactsに保存）
 4. **terraform-validate**: Terraformファイルの検証
 
 **所要時間**: 約3-5分
@@ -48,8 +48,6 @@ GitHub リポジトリの Settings > Secrets and variables > Actions で以下�
 - `NOTION_DATABASE_ID`: 監視対象NotionデータベースID
 - `NOTION_PAGE_ID`: コメント投稿先NotionページID
 
-### その他（オプション）
-- `CODECOV_TOKEN`: Codecovアップロード用（カバレッジレポート）
 
 ## Environment設定
 
@@ -128,5 +126,12 @@ README.mdに以下のバッジを追加可能：
 
 ```markdown
 [![CI](https://github.com/zaki3mymy/shopping-reminder/workflows/CI/badge.svg)](https://github.com/zaki3mymy/shopping-reminder/actions)
-[![codecov](https://codecov.io/gh/zaki3mymy/shopping-reminder/branch/main/graph/badge.svg)](https://codecov.io/gh/zaki3mymy/shopping-reminder)
 ```
+
+## カバレッジレポートの確認
+
+テスト実行後、カバレッジレポートはGitHub ActionsのArtifactsに保存されます：
+
+1. GitHub Actions > CI実行結果 > Artifacts
+2. `coverage-report` をダウンロード
+3. `index.html` をブラウザで開いて詳細な カバレッジ情報を確認
