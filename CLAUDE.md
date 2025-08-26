@@ -103,6 +103,32 @@ Markdownファイル作成・編集時は以下を実行：
 7. `git push -u origin <branch>` でプッシュ
 8. `gh pr create --title "..." --body "..."` でプルリクエスト作成
 
+### プルリクエストタイトル規則
+
+[Conventional Commits](https://www.conventionalcommits.org/ja/v1.0.0/)に従う：
+
+```
+<type>[optional scope]: <description>
+
+例:
+feat: terraformのモジュール構成を整理
+fix: Notion API接続エラーを修正
+docs: README更新とワークフロー追加
+refactor: lambda handler構造を改善
+test: E2Eテストケースを追加
+chore: 依存関係を更新
+```
+
+**主要なtype**:
+
+- `feat`: 新機能
+- `fix`: バグ修正
+- `docs`: ドキュメント変更
+- `style`: コードスタイル変更（動作に影響しない）
+- `refactor`: リファクタリング
+- `test`: テスト追加・修正
+- `chore`: ビルド・補助ツール変更
+
 ### プルリクエスト本文テンプレート
 
 ```markdown
