@@ -93,6 +93,7 @@ Markdownファイル作成・編集時は以下を実行：
 ## GitHub開発ワークフロー
 
 ### Issue対応フロー
+
 1. `gh issue list --state open` - オープンなIssueを確認
 2. `gh issue view <number>` - Issue詳細を確認・選択
 3. `git switch -c feature/<description>` - 作業用ブランチ作成
@@ -103,6 +104,7 @@ Markdownファイル作成・編集時は以下を実行：
 8. `gh pr create --title "..." --body "..."` でプルリクエスト作成
 
 ### プルリクエスト本文テンプレート
+
 ```markdown
 ## Summary
 - 変更内容の概要・実装した機能
@@ -118,11 +120,13 @@ Issue #<number>を解決します。
 ```
 
 ### レビュー対応フロー
+
 1. `gh api repos/{owner}/{repo}/pulls/{pr}/comments --paginate --jq '.[] | {id: .id, user: .user.login, path: .path, body: .body}'` - コメント取得
 2. 各コメント個別に修正実装（1コメント1コミット推奨）
 3. `gh api repos/{owner}/{repo}/pulls/{pr}/comments/{comment_id}/replies -X POST -f body="修正完了しました。\n\n<修正内容>\nコミット: <hash>"` - 返信でコミットハッシュ含めて報告
 
 ### コミットメッセージ形式
+
 ```
 <Type>: <Summary>
 
@@ -138,6 +142,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 ### 品質保証要件
+
 - pre-commitフック全通過必須
 - テストカバレッジ維持（目標100%）
 - リント・型チェックエラーなし
