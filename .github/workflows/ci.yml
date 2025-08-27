@@ -104,3 +104,38 @@ jobs:
         cd terraform/environments/production
         terraform init -backend=false
         terraform validate
+
+  terraform-plan:
+    runs-on: ubuntu-latest
+    name: Terraform Plan
+    if: github.event_name == 'pull_request'
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ap-northeast-1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "~1.9.0"
+
+    - name: Terraform Plan
+      run: |
+        cd terraform/environments/production
+        terraform init \
+          -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
+          -backend-config="key=shopping-reminder/terraform.tfstate" \
+          -backend-config="region=ap-northeast-1"
+        terraform plan \
+          -var="notion_api_key=${{ secrets.NOTION_API_KEY }}" \
+          -var="notion_database_id=${{ secrets.NOTION_DATABASE_ID }}" \
+          -var="notion_page_id=${{ secrets.NOTION_PAGE_ID }}"

@@ -71,19 +71,14 @@ jobs:
           -backend-config="key=shopping-reminder/terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
-    - name: Terraform Plan
-      run: |
-        cd terraform/environments/production
-        terraform plan \
-          -var="notion_api_key=${{ secrets.NOTION_API_KEY }}" \
-          -var="notion_database_id=${{ secrets.NOTION_DATABASE_ID }}" \
-          -var="notion_page_id=${{ secrets.NOTION_PAGE_ID }}" \
-          -out=tfplan
-
     - name: Terraform Apply
       run: |
         cd terraform/environments/production
-        terraform apply tfplan
+        terraform apply \
+          -var="notion_api_key=${{ secrets.NOTION_API_KEY }}" \
+          -var="notion_database_id=${{ secrets.NOTION_DATABASE_ID }}" \
+          -var="notion_page_id=${{ secrets.NOTION_PAGE_ID }}" \
+          -auto-approve
 
     - name: Test Lambda deployment
       run: |
@@ -95,5 +90,5 @@ jobs:
         cat response.json
 
     - name: Cleanup
-      run: rm -f response.json terraform/environments/production/tfplan
+      run: rm -f response.json
       if: always()
