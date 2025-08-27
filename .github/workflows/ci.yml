@@ -109,6 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Terraform Plan
     if: github.event_name == 'pull_request'
+    needs: terraform-validate
     permissions:
       id-token: write
       contents: read
