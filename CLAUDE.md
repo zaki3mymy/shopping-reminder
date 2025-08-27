@@ -147,9 +147,26 @@ Issue #<number>を解決します。
 
 ### レビュー対応フロー
 
-1. `gh api repos/{owner}/{repo}/pulls/{pr}/comments --paginate --jq '.[] | {id: .id, user: .user.login, path: .path, body: .body}'` - コメント取得
-2. 各コメント個別に修正実装（1コメント1コミット推奨）
+1. `get-review-threads.sh <owner> <repo> <pull_number>` - レビューコメントスレッドを取得
+2. 各コメント個別に修正実装（1コメント1コミット厳守）
 3. `gh api repos/{owner}/{repo}/pulls/{pr}/comments/{comment_id}/replies -X POST -f body="修正完了しました。\n\n<修正内容>\nコミット: <hash>"` - 返信でコミットハッシュ含めて報告
+
+#### レビューコメント取得方法
+
+**専用スクリプト使用（推奨）**:
+```bash
+get-review-threads.sh zaki3mymy shopping-reminder 5
+```
+- 未解決のレビュースレッドのみを表示
+- `databaseId`フィールドでコメント返信に必要なIDを取得
+- 構造化されたJSON形式で出力
+
+**従来のAPI呼び出し**:
+```bash
+gh api repos/{owner}/{repo}/pulls/{pr}/comments --paginate --jq '.[] | {id: .id, user: .user.login, path: .path, body: .body}'
+```
+- 全コメントを表示（解決済みを含む）
+- 返信コメントも混在するため絞り込みが必要
 
 ### コミットメッセージ形式
 
