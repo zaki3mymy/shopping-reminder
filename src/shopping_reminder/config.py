@@ -2,12 +2,8 @@ import os
 from dataclasses import dataclass
 from typing import Dict, Any
 
-try:
-    # Lambda環境での絶対インポート
-    from logger import get_logger  # type: ignore
-except ImportError:
-    # 開発環境での相対インポート
-    from .logger import get_logger
+# Lambda環境での絶対インポート
+from logger import get_logger
 
 logger = get_logger(__name__)
 
