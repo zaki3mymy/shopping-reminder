@@ -37,8 +37,7 @@
 GitHub リポジトリの Settings > Secrets and variables > Actions で以下を設定：
 
 ### AWS認証
-- `AWS_ACCESS_KEY_ID`: AWSアクセスキーID
-- `AWS_SECRET_ACCESS_KEY`: AWSシークレットアクセスキー
+- `AWS_ROLE_ARN`: OIDC認証用のAWS IAMロールARN
 
 ### Terraform
 - `TERRAFORM_STATE_BUCKET`: Terraformステートファイル保存用S3バケット名
