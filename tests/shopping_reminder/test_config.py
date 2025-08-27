@@ -7,69 +7,84 @@ from src.shopping_reminder.config import Config, ConfigError
 
 class TestConfig:
     def test_config_creation_with_env_vars(self) -> None:
-        with patch.dict(os.environ, {
-            "NOTION_API_KEY": "secret-key-123",
-            "NOTION_DATABASE_ID": "database-123",
-            "NOTION_PAGE_ID": "page-123"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NOTION_API_KEY": "secret-key-123",
+                "NOTION_DATABASE_ID": "database-123",
+                "NOTION_PAGE_ID": "page-123",
+            },
+        ):
             config = Config()
             assert config.notion_api_key == "secret-key-123"
             assert config.notion_database_id == "database-123"
             assert config.notion_page_id == "page-123"
 
     def test_config_creation_missing_api_key(self) -> None:
-        with patch.dict(os.environ, {
-            "NOTION_DATABASE_ID": "database-123",
-            "NOTION_PAGE_ID": "page-123"
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {"NOTION_DATABASE_ID": "database-123", "NOTION_PAGE_ID": "page-123"},
+            clear=True,
+        ):
             with pytest.raises(ConfigError) as exc_info:
                 Config()
             assert "NOTION_API_KEY" in str(exc_info.value)
 
     def test_config_creation_missing_database_id(self) -> None:
-        with patch.dict(os.environ, {
-            "NOTION_API_KEY": "secret-key-123",
-            "NOTION_PAGE_ID": "page-123"
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {"NOTION_API_KEY": "secret-key-123", "NOTION_PAGE_ID": "page-123"},
+            clear=True,
+        ):
             with pytest.raises(ConfigError) as exc_info:
                 Config()
             assert "NOTION_DATABASE_ID" in str(exc_info.value)
 
     def test_config_creation_missing_page_id(self) -> None:
-        with patch.dict(os.environ, {
-            "NOTION_API_KEY": "secret-key-123",
-            "NOTION_DATABASE_ID": "database-123"
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {"NOTION_API_KEY": "secret-key-123", "NOTION_DATABASE_ID": "database-123"},
+            clear=True,
+        ):
             with pytest.raises(ConfigError) as exc_info:
                 Config()
             assert "NOTION_PAGE_ID" in str(exc_info.value)
 
     def test_config_creation_empty_env_vars(self) -> None:
-        with patch.dict(os.environ, {
-            "NOTION_API_KEY": "",
-            "NOTION_DATABASE_ID": "database-123",
-            "NOTION_PAGE_ID": "page-123"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NOTION_API_KEY": "",
+                "NOTION_DATABASE_ID": "database-123",
+                "NOTION_PAGE_ID": "page-123",
+            },
+        ):
             with pytest.raises(ConfigError) as exc_info:
                 Config()
             assert "NOTION_API_KEY" in str(exc_info.value)
 
     def test_config_creation_whitespace_env_vars(self) -> None:
-        with patch.dict(os.environ, {
-            "NOTION_API_KEY": "  ",
-            "NOTION_DATABASE_ID": "database-123",
-            "NOTION_PAGE_ID": "page-123"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NOTION_API_KEY": "  ",
+                "NOTION_DATABASE_ID": "database-123",
+                "NOTION_PAGE_ID": "page-123",
+            },
+        ):
             with pytest.raises(ConfigError) as exc_info:
                 Config()
             assert "NOTION_API_KEY" in str(exc_info.value)
 
     def test_config_validation_all_required_fields_present(self) -> None:
-        with patch.dict(os.environ, {
-            "NOTION_API_KEY": "secret-key-123",
-            "NOTION_DATABASE_ID": "database-123",
-            "NOTION_PAGE_ID": "page-123"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NOTION_API_KEY": "secret-key-123",
+                "NOTION_DATABASE_ID": "database-123",
+                "NOTION_PAGE_ID": "page-123",
+            },
+        ):
             config = Config()
             # 正常に作成されれば例外は発生しない
             assert config is not None
@@ -78,7 +93,7 @@ class TestConfig:
         config_dict = {
             "NOTION_API_KEY": "secret-key-456",
             "NOTION_DATABASE_ID": "database-456",
-            "NOTION_PAGE_ID": "page-456"
+            "NOTION_PAGE_ID": "page-456",
         }
         config = Config.from_dict(config_dict)
         assert config.notion_api_key == "secret-key-456"
@@ -86,10 +101,7 @@ class TestConfig:
         assert config.notion_page_id == "page-456"
 
     def test_config_from_dict_missing_key(self) -> None:
-        config_dict = {
-            "NOTION_DATABASE_ID": "database-456",
-            "NOTION_PAGE_ID": "page-456"
-        }
+        config_dict = {"NOTION_DATABASE_ID": "database-456", "NOTION_PAGE_ID": "page-456"}
         with pytest.raises(ConfigError) as exc_info:
             Config.from_dict(config_dict)
         assert "NOTION_API_KEY" in str(exc_info.value)
@@ -99,7 +111,7 @@ class TestConfig:
         config_dict = {
             "NOTION_API_KEY": 123456,  # 数値
             "NOTION_DATABASE_ID": "database-456",
-            "NOTION_PAGE_ID": "page-456"
+            "NOTION_PAGE_ID": "page-456",
         }
         config = Config.from_dict(config_dict)
         assert config.notion_api_key == "123456"  # 文字列に変換される
@@ -111,7 +123,7 @@ class TestConfig:
         config_dict = {
             "NOTION_API_KEY": "   ",  # 空白のみ
             "NOTION_DATABASE_ID": "database-456",
-            "NOTION_PAGE_ID": "page-456"
+            "NOTION_PAGE_ID": "page-456",
         }
         with pytest.raises(ConfigError) as exc_info:
             Config.from_dict(config_dict)
@@ -119,11 +131,14 @@ class TestConfig:
         assert "cannot be empty" in str(exc_info.value)
 
     def test_config_str_representation_hides_sensitive_data(self) -> None:
-        with patch.dict(os.environ, {
-            "NOTION_API_KEY": "secret-key-123",
-            "NOTION_DATABASE_ID": "database-123",
-            "NOTION_PAGE_ID": "page-123"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NOTION_API_KEY": "secret-key-123",
+                "NOTION_DATABASE_ID": "database-123",
+                "NOTION_PAGE_ID": "page-123",
+            },
+        ):
             config = Config()
             config_str = str(config)
             assert "secret-key-123" not in config_str

@@ -1,0 +1,90 @@
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'terraform/**'
+      - 'pyproject.toml'
+      - '.github/workflows/cd.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+
+env:
+  AWS_REGION: "ap-northeast-1"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to AWS
+    environment: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run tests before deployment
+      run: uv run pytest --cov-report=term
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "~1.9.0"
+
+    - name: Create dist directory
+      run: mkdir -p dist
+
+    - name: Terraform Init
+      run: |
+        cd terraform/environments/production
+        terraform init \
+          -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
+          -backend-config="key=shopping-reminder/terraform.tfstate" \
+          -backend-config="region=${{ env.AWS_REGION }}"
+
+    - name: Terraform Apply
+      run: |
+        cd terraform/environments/production
+        terraform apply \
+          -var="notion_api_key=${{ secrets.NOTION_API_KEY }}" \
+          -var="notion_database_id=${{ secrets.NOTION_DATABASE_ID }}" \
+          -var="notion_page_id=${{ secrets.NOTION_PAGE_ID }}" \
+          -auto-approve
+
+    - name: Test Lambda deployment
+      run: |
+        aws lambda invoke \
+          --function-name shopping-reminder \
+          --payload '{}' \
+          response.json
+        echo "Lambda response:"
+        cat response.json
+
+    - name: Cleanup
+      run: rm -f response.json
+      if: always()

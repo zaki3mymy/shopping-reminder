@@ -10,11 +10,13 @@ from src.shopping_reminder.config import Config, ConfigError
 class TestShoppingReminderProcessor:
     def setup_method(self) -> None:
         """各テストメソッドの前に実行される"""
-        self.config = Config.from_dict({
-            "NOTION_API_KEY": "secret_test_key",
-            "NOTION_DATABASE_ID": "test_database_id",
-            "NOTION_PAGE_ID": "test_page_id"
-        })
+        self.config = Config.from_dict(
+            {
+                "NOTION_API_KEY": "secret_test_key",
+                "NOTION_DATABASE_ID": "test_database_id",
+                "NOTION_PAGE_ID": "test_page_id",
+            }
+        )
         self.processor = ShoppingReminderProcessor(self.config)
 
     def test_processor_initialization(self) -> None:
@@ -27,14 +29,10 @@ class TestShoppingReminderProcessor:
         mock_client = Mock()
         mock_notion_client_class.return_value = mock_client
 
-        unchecked_items = [
-            ShoppingItem("1", "牛乳", False),
-            ShoppingItem("2", "パン", False)
-        ]
+        unchecked_items = [ShoppingItem("1", "牛乳", False), ShoppingItem("2", "パン", False)]
         mock_client.query_unchecked_items.return_value = unchecked_items
         mock_client.create_comment.return_value = NotificationResult(
-            success=True,
-            message="2件の未チェック項目について通知を送信しました。"
+            success=True, message="2件の未チェック項目について通知を送信しました。"
         )
 
         processor = ShoppingReminderProcessor(self.config)
@@ -52,8 +50,7 @@ class TestShoppingReminderProcessor:
 
         mock_client.query_unchecked_items.return_value = []
         mock_client.create_comment.return_value = NotificationResult(
-            success=True,
-            message="未チェック項目はありません。通知は送信されませんでした。"
+            success=True, message="未チェック項目はありません。通知は送信されませんでした。"
         )
 
         processor = ShoppingReminderProcessor(self.config)
@@ -86,9 +83,7 @@ class TestShoppingReminderProcessor:
         unchecked_items = [ShoppingItem("1", "牛乳", False)]
         mock_client.query_unchecked_items.return_value = unchecked_items
         mock_client.create_comment.return_value = NotificationResult(
-            success=False,
-            message="コメントの作成に失敗しました。",
-            error="API key が無効です"
+            success=False, message="コメントの作成に失敗しました。", error="API key が無効です"
         )
 
         processor = ShoppingReminderProcessor(self.config)
@@ -110,8 +105,7 @@ class TestLambdaHandler:
         mock_processor = Mock()
         mock_processor_class.return_value = mock_processor
         mock_processor.process.return_value = NotificationResult(
-            success=True,
-            message="2件の未チェック項目について通知を送信しました。"
+            success=True, message="2件の未チェック項目について通知を送信しました。"
         )
 
         # イベントとコンテキストのダミー
@@ -132,8 +126,10 @@ class TestLambdaHandler:
         mock_processor.process.assert_called_once()
 
     def test_handler_config_error(self) -> None:
-        with patch("src.shopping_reminder.lambda_handler.Config") as mock_config, \
-             patch("src.shopping_reminder.lambda_handler.ConfigError", ConfigError):
+        with (
+            patch("src.shopping_reminder.lambda_handler.Config") as mock_config,
+            patch("src.shopping_reminder.lambda_handler.ConfigError", ConfigError),
+        ):
             mock_config.side_effect = ConfigError("NOTION_API_KEY is required")
 
             event: Dict[str, Any] = {}
@@ -150,9 +146,7 @@ class TestLambdaHandler:
     @patch("src.shopping_reminder.lambda_handler.Config")
     @patch("src.shopping_reminder.lambda_handler.ShoppingReminderProcessor")
     def test_handler_processing_error(
-        self,
-        mock_processor_class: Mock,
-        mock_config_class: Mock
+        self, mock_processor_class: Mock, mock_config_class: Mock
     ) -> None:
         mock_config = Mock()
         mock_config_class.return_value = mock_config
@@ -162,7 +156,7 @@ class TestLambdaHandler:
         mock_processor.process.return_value = NotificationResult(
             success=False,
             message="処理中にエラーが発生しました。",
-            error="データベースクエリエラー"
+            error="データベースクエリエラー",
         )
 
         event: Dict[str, Any] = {}

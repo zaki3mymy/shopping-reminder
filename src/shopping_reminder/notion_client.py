@@ -13,6 +13,7 @@ logger = get_logger(__name__)
 
 class NotionAPIError(Exception):
     """Notion API に関するエラー"""
+
     pass
 
 
@@ -40,10 +41,7 @@ class NotionClient:
 
         while True:
             page_count += 1
-            body = {
-                "filter": filter_obj,
-                "page_size": 100
-            }
+            body = {"filter": filter_obj, "page_size": 100}
             if start_cursor:
                 body["start_cursor"] = start_cursor
 
@@ -58,12 +56,13 @@ class NotionClient:
             # NotionDatabaseItemからShoppingItemに変換
             for item_data in response_data["results"]:
                 notion_item = NotionDatabaseItem(
-                    id=item_data["id"],
-                    properties=item_data["properties"]
+                    id=item_data["id"], properties=item_data["properties"]
                 )
                 shopping_item = notion_item.to_shopping_item()
                 results.append(shopping_item)
-                logger.info(f"Processed item: {shopping_item.name} (ID: {shopping_item.id}, Checked: {shopping_item.checked})")
+                logger.info(
+                    f"Processed item: {shopping_item.name} (ID: {shopping_item.id}, Checked: {shopping_item.checked})"
+                )
 
             if not response_data["has_more"]:
                 break
@@ -79,8 +78,7 @@ class NotionClient:
         if not items:
             logger.info("No unchecked items found - skipping comment creation")
             return NotificationResult(
-                success=True,
-                message="未チェック項目はありません。通知は送信されませんでした。"
+                success=True, message="未チェック項目はありません。通知は送信されませんでした。"
             )
 
         try:
@@ -92,12 +90,7 @@ class NotionClient:
 
             body = {
                 "parent": {"page_id": self.config.notion_page_id},
-                "rich_text": [
-                    {
-                        "type": "text",
-                        "text": {"content": message}
-                    }
-                ]
+                "rich_text": [{"type": "text", "text": {"content": message}}],
             }
 
             logger.info(f"Comment request body: {json.dumps(body)}")
@@ -106,24 +99,18 @@ class NotionClient:
 
             logger.info(f"Comment created successfully for {len(items)} items")
             return NotificationResult(
-                success=True,
-                message=f"{len(items)}件の未チェック項目について通知を送信しました。"
+                success=True, message=f"{len(items)}件の未チェック項目について通知を送信しました。"
             )
 
         except NotionAPIError as e:
             logger.exception(f"Failed to create comment: {str(e)}")
             return NotificationResult(
-                success=False,
-                message="コメントの作成に失敗しました。",
-                error=str(e)
+                success=False, message="コメントの作成に失敗しました。", error=str(e)
             )
 
     def _build_filter_for_unchecked_items(self) -> Dict[str, Any]:
         """未チェック項目を取得するためのフィルターを構築"""
-        return {
-            "property": "完了",
-            "checkbox": {"equals": False}
-        }
+        return {"property": "完了", "checkbox": {"equals": False}}
 
     def _format_comment_message(self, items: List[ShoppingItem]) -> str:
         """コメント用のメッセージを作成"""
@@ -149,9 +136,9 @@ class NotionClient:
             headers={
                 "Authorization": f"Bearer {self.config.notion_api_key}",
                 "Content-Type": "application/json",
-                "Notion-Version": "2022-06-28"
+                "Notion-Version": "2022-06-28",
             },
-            method="POST"
+            method="POST",
         )
 
         # ログ出力時のみAPIキーをマスク
@@ -176,7 +163,9 @@ class NotionClient:
                     error_message = response_data.decode("utf-8")
                     logger.error(f"API request failed with status {status_code}")
                     logger.error(f"Error response: {error_message}")
-                    raise NotionAPIError(f"API request failed with status {status_code}: {error_message}")
+                    raise NotionAPIError(
+                        f"API request failed with status {status_code}: {error_message}"
+                    )
 
         except urllib.error.HTTPError as e:
             error_message = e.read().decode("utf-8") if e.fp else "Unknown error"

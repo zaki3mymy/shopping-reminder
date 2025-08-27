@@ -14,12 +14,14 @@ logger = get_logger(__name__)
 
 class ConfigError(Exception):
     """設定に関するエラー"""
+
     pass
 
 
 @dataclass
 class Config:
     """アプリケーションの設定を管理するクラス"""
+
     notion_api_key: str
     notion_database_id: str
     notion_page_id: str
@@ -72,7 +74,9 @@ class Config:
 
     def __str__(self) -> str:
         """設定の文字列表現（API keyは隠す）"""
-        return (f"Config("
-                f"notion_api_key=***HIDDEN***, "
-                f"notion_database_id={self.notion_database_id}, "
-                f"notion_page_id={self.notion_page_id})")
+        return (
+            f"Config("
+            f"notion_api_key=***HIDDEN***, "
+            f"notion_database_id={self.notion_database_id}, "
+            f"notion_page_id={self.notion_page_id})"
+        )

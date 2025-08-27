@@ -48,7 +48,7 @@ class TestNotionDatabaseItem:
     def test_notion_database_item_creation(self) -> None:
         properties = {
             "名前": {"title": [{"text": {"content": "牛乳"}}]},
-            "完了": {"checkbox": False}
+            "完了": {"checkbox": False},
         }
         item = NotionDatabaseItem(id="123", properties=properties)
         assert item.id == "123"
@@ -57,7 +57,7 @@ class TestNotionDatabaseItem:
     def test_to_shopping_item_unchecked(self) -> None:
         properties = {
             "名前": {"title": [{"text": {"content": "牛乳"}}]},
-            "完了": {"checkbox": False}
+            "完了": {"checkbox": False},
         }
         notion_item = NotionDatabaseItem(id="123", properties=properties)
         shopping_item = notion_item.to_shopping_item()
@@ -69,7 +69,7 @@ class TestNotionDatabaseItem:
     def test_to_shopping_item_checked(self) -> None:
         properties = {
             "名前": {"title": [{"text": {"content": "パン"}}]},
-            "完了": {"checkbox": True}
+            "完了": {"checkbox": True},
         }
         notion_item = NotionDatabaseItem(id="456", properties=properties)
         shopping_item = notion_item.to_shopping_item()
@@ -79,10 +79,7 @@ class TestNotionDatabaseItem:
         assert shopping_item.checked is True
 
     def test_to_shopping_item_empty_title(self) -> None:
-        properties = {
-            "名前": {"title": []},
-            "完了": {"checkbox": False}
-        }
+        properties = {"名前": {"title": []}, "完了": {"checkbox": False}}
         notion_item = NotionDatabaseItem(id="789", properties=properties)
         shopping_item = notion_item.to_shopping_item()
 
@@ -107,9 +104,7 @@ class TestNotificationResult:
 
     def test_notification_result_failure(self) -> None:
         result = NotificationResult(
-            success=False,
-            message="通知の送信に失敗しました",
-            error="API key が無効です"
+            success=False, message="通知の送信に失敗しました", error="API key が無効です"
         )
         assert result.success is False
         assert result.message == "通知の送信に失敗しました"
