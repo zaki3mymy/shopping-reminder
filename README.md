@@ -13,7 +13,7 @@
 
 ## 🏗️ システム構成
 
-```
+```text
 EventBridge (Schedule) → AWS Lambda → Notion API
                            ↓
                     CloudWatch Logs
@@ -68,11 +68,11 @@ print(result)
 ### 4. AWSデプロイ
 
 ```bash
-# Terraform環境初期化
-cd terraform
+# Terraform環境初期化（本番環境）
+cd terraform/environments/production
 terraform init \
   -backend-config="bucket=<YOUR_BUCKET_NAME>" \
-  -backend-config="key=shopping-reminder/terraform.tfstate" \
+  -backend-config="key=shopping-reminder/production/terraform.tfstate" \
   -backend-config="region=ap-northeast-1"
 
 # 設定ファイル terraform.tfvars を作成
@@ -84,7 +84,7 @@ terraform apply
 
 ## 📁 プロジェクト構造
 
-```
+```text
 shopping-reminder/
 ├── src/shopping_reminder/          # メインアプリケーション
 │   ├── models.py                   # データモデル
@@ -99,12 +99,21 @@ shopping-reminder/
 │   ├── test_lambda_handler.py     # Lambda テスト
 │   └── test_e2e.py               # E2Eテスト
 ├── terraform/                     # AWS インフラ設定
-│   ├── main.tf                    # メイン設定
-│   ├── variables.tf               # 変数定義
-│   ├── lambda.tf                  # Lambda 設定
-│   ├── eventbridge.tf             # スケジュール設定
-│   ├── iam.tf                     # IAM ロール設定
-│   └── outputs.tf                 # 出力値定義
+│   ├── modules/
+│   │   └── shopping-reminder/     # 再利用可能なモジュール
+│   │       ├── main.tf            # Lambda・EventBridge・IAM設定
+│   │       ├── variables.tf       # 変数定義
+│   │       └── outputs.tf         # 出力値定義
+│   ├── environments/
+│   │   └── production/            # 本番環境設定
+│   │       ├── main.tf            # メイン設定（モジュール使用）
+│   │       ├── variables.tf       # 環境固有変数
+│   │       ├── outputs.tf         # 出力値定義
+│   │       ├── providers.tf       # プロバイダー設定
+│   │       └── versions.tf        # バージョン制約
+│   ├── examples/
+│   │   └── basic/                 # 基本利用例
+│   └── versions.tf                # 共通バージョン制約
 ├── pyproject.toml                 # Python プロジェクト設定
 ├── .pre-commit-config.yaml        # pre-commitフック
 └── CLAUDE.md                      # 開発ガイドライン
