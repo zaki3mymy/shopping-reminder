@@ -19,7 +19,6 @@ on:
         - production
 
 env:
-  PYTHON_VERSION: "3.13"
   AWS_REGION: "ap-northeast-1"
 
 permissions:
