@@ -1,3 +1,4 @@
+# tflint-ignore: terraform_required_providers
 # Lambda deployment package
 data "archive_file" "lambda_zip" {
   type        = "zip"
