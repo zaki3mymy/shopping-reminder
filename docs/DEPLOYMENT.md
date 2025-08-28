@@ -18,22 +18,27 @@ terraform init \
   -backend-config="key=shopping-reminder/terraform.tfstate" \
   -backend-config="region=ap-northeast-1"
 
-# 設定ファイル terraform.tfvars を作成
-terraform plan
-terraform apply
+# terraform.tfvarsファイルを作成
+cat <<EOF > terraform.tfvars
+notion_api_key     = "secret_xxxxxxxxxxxx"
+notion_database_id = "database-id-here"
+notion_page_id     = "page-id-here"
+EOF
+
+# デプロイ実行
+terraform plan -var-file terraform.tfvars
+terraform apply -var-file terraform.tfvars
 ```
 
 詳細は [terraform/README.md](../terraform/README.md) を参照
 
-### 必要な環境変数
+### 必要な設定値
 
-以下の環境変数を設定してください：
+以下の値をterraform.tfvarsファイルに設定してください：
 
-```bash
-export NOTION_API_KEY="secret_xxxxxxxxxxxx"
-export NOTION_DATABASE_ID="database-id-here"
-export NOTION_PAGE_ID="page-id-here"
-```
+- `notion_api_key`: Notion API キー
+- `notion_database_id`: 監視対象のデータベースID
+- `notion_page_id`: コメント投稿先のページID
 
 ## 🔍 運用・監視
 

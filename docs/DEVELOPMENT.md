@@ -81,5 +81,6 @@ uv run pre-commit run --all-files
 3. テストの追加・実行
 4. pre-commitフックの通過確認
 5. プルリクエストの作成
+6. レビュー完了後、マージ（管理者のみ）
 
 詳細な開発ガイドラインは [CLAUDE.md](../CLAUDE.md) を参照してください。
