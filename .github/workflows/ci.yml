@@ -110,6 +110,14 @@ jobs:
         terraform init -backend=false
         terraform validate
 
+    - name: TFLint
+      uses: reviewdog/action-tflint@v1
+      with:
+        github_token: ${{ secrets.github_token }}
+        working_directory: terraform/
+        tflint_version: "latest"
+        flags: "--recursive"
+
   terraform-plan:
     runs-on: ubuntu-latest
     name: Terraform Plan
