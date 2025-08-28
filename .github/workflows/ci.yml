@@ -3,8 +3,24 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'terraform/**'
+      - 'pyproject.toml'
+      - '.pre-commit-config.yaml'
+      - '.python-version'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'terraform/**'
+      - 'pyproject.toml'
+      - '.pre-commit-config.yaml'
+      - '.python-version'
+      - '.github/workflows/ci.yml'
 
 
 jobs:
