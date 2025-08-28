@@ -15,7 +15,7 @@
 cd terraform/environments/production
 terraform init \
   -backend-config="bucket=<YOUR_BUCKET_NAME>" \
-  -backend-config="key=shopping-reminder/production/terraform.tfstate" \
+  -backend-config="key=shopping-reminder/terraform.tfstate" \
   -backend-config="region=ap-northeast-1"
 
 # 設定ファイル terraform.tfvars を作成
