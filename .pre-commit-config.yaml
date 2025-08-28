@@ -39,14 +39,6 @@ repos:
         files: \.tf$
         args: [-write=true]
 
-    -   id: terraform-validate-modules
-        name: Validate Terraform module
-        entry: bash -c "cd terraform/modules/shopping-reminder && terraform validate"
-        language: system
-        types: [file]
-        files: ^terraform/modules/.*\.tf$
-        pass_filenames: false
-
     -   id: terraform-validate-production
         name: Validate Terraform production environment
         entry: bash -c "cd terraform/environments/production && terraform validate"
