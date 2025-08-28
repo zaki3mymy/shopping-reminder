@@ -96,12 +96,13 @@ Markdownファイル作成・編集時は以下を実行：
 
 1. `gh issue list --state open` - オープンなIssueを確認
 2. `gh issue view <number>` - Issue詳細を確認・選択
-3. `git switch -c feature/<description>` - 作業用ブランチ作成
-4. TodoWriteツールでタスク管理・進捗追跡
-5. 実装・テスト・品質チェック（ruff、mypy、pytest全て通すこと）
-6. 段階的コミット（機能単位での細かいコミット）
-7. `git push -u origin <branch>` でプッシュ
-8. `gh pr create --title "..." --body "..."` でプルリクエスト作成
+3. `git switch main && git pull origin main` - 最新のmainブランチに切り替え
+4. `git switch -c feature/<description>` - 作業用ブランチ作成（mainブランチから必ず作成）
+5. TodoWriteツールでタスク管理・進捗追跡
+6. 実装・テスト・品質チェック（ruff、mypy、pytest全て通すこと）
+7. 段階的コミット（機能単位での細かいコミット）
+8. `git push -u origin <branch>` でプッシュ
+9. `gh pr create --title "..." --body "..."` でプルリクエスト作成
 
 ### プルリクエストタイトル規則
 
