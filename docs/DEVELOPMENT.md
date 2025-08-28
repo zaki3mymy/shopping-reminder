@@ -21,7 +21,11 @@ uv run pytest tests/shopping_reminder/test_models.py -v
 # カバレッジレポート生成
 uv run pytest --cov src --cov-branch --cov-report html
 
-# E2Eテスト（環境変数必須）
+# E2Eテスト（テスト用環境変数必須）
+# 以下の環境変数が必要（本番用とは別のテスト用環境）：
+# - NOTION_API_KEY_TEST: テスト用のNotion API キー
+# - NOTION_DATABASE_ID_TEST: テスト用のデータベースID
+# - NOTION_PAGE_ID_TEST: テスト用のページID
 uv run pytest tests/shopping_reminder/test_e2e.py -v
 
 # Lambdaハンドラーの動作確認
