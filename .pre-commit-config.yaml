@@ -47,6 +47,23 @@ repos:
         files: ^terraform/environments/production/.*\.tf$
         pass_filenames: false
 
+    -   id: tflint
+        name: TFLint
+        entry: tflint --chdir=terraform/ --recursive
+        language: system
+        types: [file]
+        files: \.tf$
+        pass_filenames: false
+
+    -   id: terraform-docs
+        name: Terraform Docs
+        entry: terraform-docs
+        language: system
+        types: [file]
+        files: ^terraform/.*\.tf$
+        args: [--config=terraform/.terraform-docs.yml, terraform/]
+        pass_filenames: false
+
     -   id: unit-test
         name: Run unit tests
         entry: uv run pytest --cov src --cov-branch --cov-report term-missing --cov-report xml --cov-report html
