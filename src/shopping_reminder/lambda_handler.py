@@ -18,21 +18,27 @@ class ShoppingReminderProcessor:
         logger.info("ShoppingReminderProcessor initialized successfully")
 
     def process(self) -> NotificationResult:
-        """メイン処理を実行"""
+        """メイン処理を実行（複数データベース対応）"""
         try:
             logger.info("Starting shopping reminder process")
+            logger.info(f"Processing {len(self.config.database_configs)} database configurations")
 
-            # 1. 未チェック項目を取得
-            logger.info("Querying unchecked items from Notion database")
-            unchecked_items = self.notion_client.query_unchecked_items()
-            logger.info(f"Found {len(unchecked_items)} unchecked items")
+            # 1. すべてのアクティブデータベースから未チェック項目を取得
+            logger.info("Querying unchecked items from all active Notion databases")
+            all_results = self.notion_client.query_all_unchecked_items()
 
-            for item in unchecked_items:
-                logger.info(f"Unchecked item: {item.name} (ID: {item.id})")
+            total_items = sum(len(items) for _, items in all_results)
+            logger.info(f"Found {total_items} total unchecked items across {len(all_results)} databases")
 
-            # 2. コメントを作成（未チェック項目がない場合も含む）
-            logger.info("Creating comment notification")
-            result = self.notion_client.create_comment(unchecked_items)
+            # データベースごとの詳細をログ出力
+            for db_config, items in all_results:
+                logger.info(f"{db_config.config_name}: {len(items)} unchecked items")
+                for item in items:
+                    logger.info(f"  • {item.name} (ID: {item.id})")
+
+            # 2. 各データベースに対応するページにコメントを作成
+            logger.info("Creating comment notifications for all databases")
+            result = self.notion_client.create_all_comments(all_results)
 
             if result.success:
                 logger.info(f"Process completed successfully: {result.message}")

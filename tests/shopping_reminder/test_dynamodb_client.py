@@ -34,10 +34,9 @@ class TestDynamoDBClient:
     @patch("src.shopping_reminder.dynamodb_client.boto3.resource")
     def test_get_table_error(self, mock_boto3_resource: Mock) -> None:
         """テーブル取得のエラーテスト"""
-        mock_boto3_resource.side_effect = ClientError(
-            error_response={"Error": {"Code": "UnauthorizedOperation"}},
-            operation_name="DescribeTable"
-        )
+        from botocore.exceptions import BotoCoreError
+
+        mock_boto3_resource.side_effect = BotoCoreError()
 
         with pytest.raises(DynamoDBError, match="Failed to get DynamoDB table"):
             _get_table("test-table")
