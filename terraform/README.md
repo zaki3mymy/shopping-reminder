@@ -10,7 +10,8 @@ terraform/
 │   └── shopping-reminder/    # メインアプリケーションモジュール
 │       ├── main.tf          # リソース定義
 │       ├── variables.tf     # 変数定義
-│       └── outputs.tf       # 出力値定義
+│       ├── outputs.tf       # 出力値定義
+│       └── README.md        # モジュール詳細ドキュメント
 ├── environments/
 │   └── production/          # 本番環境設定
 │       ├── main.tf          # モジュール使用
@@ -18,8 +19,9 @@ terraform/
 │       ├── outputs.tf       # 出力値
 │       ├── providers.tf     # プロバイダー設定
 │       ├── versions.tf      # Terraform/プロバイダーバージョン
-│       └── terraform.tfvars # 環境固有の値
-└── README.md               # このファイル
+│       ├── terraform.tfvars # 環境固有の値
+│       └── README.md        # 環境別デプロイ手順
+└── README.md               # このファイル（概要）
 ```
 
 ## 概要
@@ -32,95 +34,24 @@ terraform/
 - **IAM Role**: Lambda実行に必要な最小限の権限
 - **Resource Groups**: AWS リソースの管理・監視を簡素化
 
-## デプロイメント
+## ドキュメント
 
-### 本番環境
+各コンポーネントの詳細なドキュメントは以下を参照してください：
 
-```bash
-cd environments/production
+- **[モジュール詳細](./modules/shopping-reminder/README.md)**: リソース仕様、変数、出力値
+- **[本番環境デプロイ](./environments/production/README.md)**: デプロイ手順、設定方法
 
-# 初期化
-terraform init \
-  -backend-config="bucket=<YOUR_BUCKET_NAME>" \
-  -backend-config="key=shopping-reminder/terraform.tfstate" \
-  -backend-config="region=ap-northeast-1"
+## ドキュメント生成
 
-# プランニング
-terraform plan
-
-# デプロイ
-terraform apply
-```
-
-### terraform.tfvars の設定
-
-`environments/production/terraform.tfvars` に以下の値を設定してください：
-
-```hcl
-notion_api_key     = "secret_xxxxxxxxxxxx"
-notion_database_id = "database-id-here"
-notion_page_id     = "page-id-here"
-```
-
-## デプロイ後の確認
+各コンポーネントのドキュメントはterraform-docsで自動生成されます：
 
 ```bash
-# 作成されたリソースの確認
-terraform output
+# モジュール詳細ドキュメント生成
+terraform-docs --config=terraform/modules/shopping-reminder/.terraform-docs.yml terraform/modules/shopping-reminder/
 
-# Lambda実行テスト
-aws lambda invoke --function-name shopping-reminder response.json
-
-# リソースグループの確認
-aws resource-groups list-groups
-aws resource-groups get-group --group-name shopping-reminder-resources
+# 本番環境ドキュメント生成
+terraform-docs --config=terraform/environments/production/.terraform-docs.yml terraform/environments/production/
 ```
-
-## モジュール
-
-### shopping-reminder モジュール
-
-メインアプリケーションのAWSリソースを管理するモジュールです：
-
-- **Lambda関数**: メインアプリケーション実行
-- **EventBridge**: 日次スケジュール実行
-- **IAMロール**: Lambda実行権限
-- **CloudWatchロググループ**: ログ記録
-- **リソースグループ**: リソース管理
-
-#### 主要変数
-
-- `notion_api_key`: Notion API キー (sensitive)
-- `notion_database_id`: 監視対象データベースID
-- `notion_page_id`: コメント投稿先ページID
-- `lambda_function_name`: Lambda関数名
-- `schedule_expression`: 実行スケジュール (デフォルト: JST 17:00)
-
-#### 出力値
-
-- `lambda_function_arn`: Lambda関数ARN
-- `eventbridge_rule_arn`: EventBridge ルールARN
-- `cloudwatch_log_group_name`: CloudWatchロググループ名
-
-詳細は各モジュールの `variables.tf` と `outputs.tf` を参照してください。
-
-## 変数一覧
-
-| 変数名 | 説明 | デフォルト値 | 必須 |
-|--------|------|-------------|------|
-| `notion_api_key` | Notion API キー | - | Yes |
-| `notion_database_id` | NotionデータベースID | - | Yes |
-| `notion_page_id` | NotionページID | - | Yes |
-| `lambda_function_name` | Lambda関数名 | `shopping-reminder` | No |
-| `schedule_expression` | 実行スケジュール | `cron(0 8 * * ? *)` | No |
-| `lambda_timeout` | タイムアウト（秒） | `30` | No |
-| `lambda_memory_size` | メモリサイズ（MB） | `128` | No |
-| `cloudwatch_log_retention_days` | ログ保持期間（日） | `14` | No |
-| `resource_group_name` | リソースグループ名 | `shopping-reminder-resources` | No |
-| `environment` | 環境名 | `production` | No |
-| `create_comprehensive_resource_group` | 包括的リソースグループの作成 | `false` | No |
-| `source_dir` | ソースコードディレクトリ | `../../../src/shopping_reminder` | No |
-| `output_zip_path` | Lambda zipファイル出力先 | `../../../dist/lambda_function.zip` | No |
 
 ## セキュリティ考慮事項
 
