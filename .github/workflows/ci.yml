@@ -119,8 +119,13 @@ jobs:
         flags: "--recursive"
 
     - name: Terraform Docs Check
-      run: |
-        terraform-docs --config=terraform/.terraform-docs.yml --output-check terraform/
+      uses: terraform-docs/gh-actions@v1.4.1
+      with:
+        working-dir: terraform/
+        output-file: README.md
+        output-method: inject
+        git-push: "false"
+        find-dir: terraform/modules/shopping-reminder/
 
   terraform-plan:
     runs-on: ubuntu-latest
