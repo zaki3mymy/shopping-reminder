@@ -118,14 +118,23 @@ jobs:
         tflint_version: "latest"
         flags: "--recursive"
 
-    - name: Terraform Docs Check
+    - name: Terraform Docs Check - Module
       uses: terraform-docs/gh-actions@v1.4.1
       with:
-        working-dir: terraform/
+        working-dir: terraform/modules/shopping-reminder/
         output-file: README.md
         output-method: inject
         git-push: "false"
-        find-dir: terraform/modules/shopping-reminder/
+        fail-on-diff: "true"
+
+    - name: Terraform Docs Check - Production
+      uses: terraform-docs/gh-actions@v1.4.1
+      with:
+        working-dir: terraform/environments/production/
+        output-file: README.md
+        output-method: inject
+        git-push: "false"
+        fail-on-diff: "true"
 
   terraform-plan:
     runs-on: ubuntu-latest
