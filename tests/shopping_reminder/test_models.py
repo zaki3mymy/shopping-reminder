@@ -1,7 +1,7 @@
 from typing import Dict, Any
 import pytest
 
-from src.shopping_reminder.models import ShoppingItem, NotionDatabaseItem, NotificationResult
+from src.shopping_reminder.models import ShoppingItem, NotionDatabaseItem, NotificationResult, DatabaseConfig
 
 
 class TestShoppingItem:
@@ -115,3 +115,134 @@ class TestNotificationResult:
         assert result.success is True
         assert result.message == "成功"
         assert result.error is None
+
+
+class TestDatabaseConfig:
+    def test_database_config_creation(self) -> None:
+        """DatabaseConfig の作成テスト"""
+        config = DatabaseConfig(
+            config_id="test-id-123",
+            config_name="テスト設定",
+            notion_database_id="db-123",
+            notion_page_id="page-123",
+            is_active=True,
+            description="テスト用の設定です"
+        )
+
+        assert config.config_id == "test-id-123"
+        assert config.config_name == "テスト設定"
+        assert config.notion_database_id == "db-123"
+        assert config.notion_page_id == "page-123"
+        assert config.is_active is True
+        assert config.description == "テスト用の設定です"
+
+    def test_database_config_create_new(self) -> None:
+        """DatabaseConfig.create_new のテスト"""
+        config = DatabaseConfig.create_new(
+            config_name="新しい設定",
+            notion_database_id="db-new",
+            notion_page_id="page-new",
+            is_active=False,
+            description="新しいテスト設定"
+        )
+
+        # UUIDが生成されているか確認
+        assert config.config_id is not None
+        assert len(config.config_id) == 36  # UUID4の標準的な長さ
+        assert config.config_name == "新しい設定"
+        assert config.notion_database_id == "db-new"
+        assert config.notion_page_id == "page-new"
+        assert config.is_active is False
+        assert config.description == "新しいテスト設定"
+
+    def test_database_config_create_new_defaults(self) -> None:
+        """DatabaseConfig.create_new のデフォルト値テスト"""
+        config = DatabaseConfig.create_new(
+            config_name="デフォルト設定",
+            notion_database_id="db-default",
+            notion_page_id="page-default"
+        )
+
+        assert config.is_active is True  # デフォルトでTrue
+        assert config.description is None  # デフォルトでNone
+
+    def test_to_dynamodb_item(self) -> None:
+        """to_dynamodb_item のテスト"""
+        config = DatabaseConfig(
+            config_id="test-id-456",
+            config_name="DynamoDB テスト",
+            notion_database_id="db-456",
+            notion_page_id="page-456",
+            is_active=True,
+            description="DynamoDB変換テスト"
+        )
+
+        item = config.to_dynamodb_item()
+
+        expected = {
+            "config_id": "test-id-456",
+            "config_name": "DynamoDB テスト",
+            "notion_database_id": "db-456",
+            "notion_page_id": "page-456",
+            "is_active": True,
+            "description": "DynamoDB変換テスト"
+        }
+        assert item == expected
+
+    def test_to_dynamodb_item_without_description(self) -> None:
+        """to_dynamodb_item の description なしテスト"""
+        config = DatabaseConfig(
+            config_id="test-id-789",
+            config_name="説明なし設定",
+            notion_database_id="db-789",
+            notion_page_id="page-789",
+            is_active=False
+        )
+
+        item = config.to_dynamodb_item()
+
+        expected = {
+            "config_id": "test-id-789",
+            "config_name": "説明なし設定",
+            "notion_database_id": "db-789",
+            "notion_page_id": "page-789",
+            "is_active": False
+        }
+        assert item == expected
+        assert "description" not in item
+
+    def test_from_dynamodb_item(self) -> None:
+        """from_dynamodb_item のテスト"""
+        item = {
+            "config_id": "from-db-123",
+            "config_name": "データベースから",
+            "notion_database_id": "db-from",
+            "notion_page_id": "page-from",
+            "is_active": True,
+            "description": "データベースからの復元"
+        }
+
+        config = DatabaseConfig.from_dynamodb_item(item)
+
+        assert config.config_id == "from-db-123"
+        assert config.config_name == "データベースから"
+        assert config.notion_database_id == "db-from"
+        assert config.notion_page_id == "page-from"
+        assert config.is_active is True
+        assert config.description == "データベースからの復元"
+
+    def test_from_dynamodb_item_without_description(self) -> None:
+        """from_dynamodb_item の description なしテスト"""
+        item = {
+            "config_id": "from-db-456",
+            "config_name": "説明なしデータベース設定",
+            "notion_database_id": "db-no-desc",
+            "notion_page_id": "page-no-desc",
+            "is_active": False
+        }
+
+        config = DatabaseConfig.from_dynamodb_item(item)
+
+        assert config.config_id == "from-db-456"
+        assert config.config_name == "説明なしデータベース設定"
+        assert config.description is None
