@@ -37,7 +37,8 @@ resource "aws_lambda_function" "shopping_reminder" {
     variables = {
       NOTION_API_KEY     = var.notion_api_key
       NOTION_DATABASE_ID = var.notion_database_id
-      NOTION_PAGE_ID     = var.notion_page_id
+      NOTIFY_API_KEY     = var.notify_api_key
+      NOTIFY_API_URL     = var.notify_api_url
     }
   }
 

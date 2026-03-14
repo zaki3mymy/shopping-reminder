@@ -4,7 +4,7 @@ import urllib.parse
 from typing import List, Dict, Any
 
 # Lambda環境での絶対インポート
-from models import ShoppingItem, NotionDatabaseItem, NotificationResult
+from models import ShoppingItem, NotionDatabaseItem
 from config import Config
 from logger import get_logger
 
@@ -25,7 +25,6 @@ class NotionClient:
         self.base_url = "https://api.notion.com/v1"
         logger.info("NotionClient initialized")
         logger.info(f"Database ID: {config.notion_database_id}")
-        logger.info(f"Page ID: {config.notion_page_id}")
 
     def query_unchecked_items(self) -> List[ShoppingItem]:
         """未チェック項目をデータベースから取得"""
@@ -73,55 +72,9 @@ class NotionClient:
         logger.info(f"Query completed. Total items found: {len(results)}")
         return results
 
-    def create_comment(self, items: List[ShoppingItem]) -> NotificationResult:
-        """未チェック項目のリストからコメントを作成"""
-        if not items:
-            logger.info("No unchecked items found - skipping comment creation")
-            return NotificationResult(
-                success=True, message="未チェック項目はありません。通知は送信されませんでした。"
-            )
-
-        try:
-            url = f"{self.base_url}/comments"
-            logger.info(f"Creating comment at: {url}")
-
-            message = self._format_comment_message(items)
-            logger.info(f"Comment message: {message}")
-
-            body = {
-                "parent": {"page_id": self.config.notion_page_id},
-                "rich_text": [{"type": "text", "text": {"content": message}}],
-            }
-
-            logger.info(f"Comment request body: {json.dumps(body)}")
-            response_data = self._make_post_request(url, body)
-            logger.info(f"Comment creation response: {json.dumps(response_data)}")
-
-            logger.info(f"Comment created successfully for {len(items)} items")
-            return NotificationResult(
-                success=True, message=f"{len(items)}件の未チェック項目について通知を送信しました。"
-            )
-
-        except NotionAPIError as e:
-            logger.exception(f"Failed to create comment: {str(e)}")
-            return NotificationResult(
-                success=False, message="コメントの作成に失敗しました。", error=str(e)
-            )
-
     def _build_filter_for_unchecked_items(self) -> Dict[str, Any]:
         """未チェック項目を取得するためのフィルターを構築"""
         return {"property": "完了", "checkbox": {"equals": False}}
-
-    def _format_comment_message(self, items: List[ShoppingItem]) -> str:
-        """コメント用のメッセージを作成"""
-        count = len(items)
-        message = f"🛒 {count}件の未チェック項目があります:\n\n"
-
-        for item in items:
-            message += f"• {item.name}\n"
-
-        message += "\n買い忘れがないよう確認をお願いします！"
-        return message
 
     def _make_post_request(self, url: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Notion APIにPOSTリクエストを送信"""

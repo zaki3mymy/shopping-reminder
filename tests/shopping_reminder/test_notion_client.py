@@ -1,10 +1,8 @@
 import json
-from typing import List
 from unittest.mock import Mock, patch
 import pytest
 
 from src.shopping_reminder.notion_client import NotionClient, NotionAPIError
-from src.shopping_reminder.models import ShoppingItem
 from src.shopping_reminder.config import Config
 
 
@@ -15,7 +13,8 @@ class TestNotionClient:
             {
                 "NOTION_API_KEY": "secret_test_key",
                 "NOTION_DATABASE_ID": "test_database_id",
-                "NOTION_PAGE_ID": "test_page_id",
+                "NOTIFY_API_KEY": "test_notify_key",
+                "NOTIFY_API_URL": "https://example.com/prod",
             }
         )
         self.client = NotionClient(self.config)
@@ -152,7 +151,7 @@ class TestNotionClient:
 
     @patch("urllib.request.urlopen")
     def test_url_error(self, mock_urlopen: Mock) -> None:
-        """URLError の場合のテスト（行139をカバー）"""
+        """URLError の場合のテスト"""
         import urllib.error
 
         url_error = urllib.error.URLError("Connection refused")
@@ -166,7 +165,7 @@ class TestNotionClient:
 
     @patch("urllib.request.urlopen")
     def test_json_decode_error(self, mock_urlopen: Mock) -> None:
-        """JSONDecodeError の場合のテスト（行141をカバー）"""
+        """JSONDecodeError の場合のテスト"""
         mock_response = Mock()
         mock_response.read.return_value = b"invalid json{"
         mock_response.getcode.return_value = 200
@@ -177,76 +176,11 @@ class TestNotionClient:
 
         assert "JSON decode error" in str(exc_info.value)
 
-    @patch("urllib.request.urlopen")
-    def test_create_comment_success(self, mock_urlopen: Mock) -> None:
-        mock_response_data = {
-            "id": "comment123",
-            "parent": {"page_id": "test_page_id"},
-            "created_time": "2023-01-01T00:00:00.000Z",
-        }
-
-        mock_response = Mock()
-        mock_response.read.return_value = json.dumps(mock_response_data).encode("utf-8")
-        mock_response.getcode.return_value = 200
-        mock_urlopen.return_value.__enter__.return_value = mock_response
-
-        items = [ShoppingItem("1", "牛乳", False), ShoppingItem("2", "パン", False)]
-        result = self.client.create_comment(items)
-
-        assert result.success is True
-        assert "2件の未チェック項目" in result.message
-        assert result.error is None
-
-    @patch("urllib.request.urlopen")
-    def test_create_comment_empty_items(self, mock_urlopen: Mock) -> None:
-        items: List[ShoppingItem] = []
-        result = self.client.create_comment(items)
-
-        assert result.success is True
-        assert "未チェック項目はありません" in result.message
-        assert result.error is None
-        # APIが呼ばれないことを確認
-        mock_urlopen.assert_not_called()
-
-    @patch("urllib.request.urlopen")
-    def test_create_comment_api_error(self, mock_urlopen: Mock) -> None:
-        mock_response = Mock()
-        mock_response.getcode.return_value = 400
-        mock_response.read.return_value = b'{"message": "Bad request"}'
-        mock_urlopen.return_value.__enter__.return_value = mock_response
-
-        items = [ShoppingItem("1", "牛乳", False)]
-        result = self.client.create_comment(items)
-
-        assert result.success is False
-        assert "コメントの作成に失敗" in result.message
-        assert "400" in result.error
-
     def test_build_filter_for_unchecked_items(self) -> None:
         filter_obj = self.client._build_filter_for_unchecked_items()
 
         expected_filter = {"property": "完了", "checkbox": {"equals": False}}
         assert filter_obj == expected_filter
-
-    def test_format_comment_message_single_item(self) -> None:
-        items = [ShoppingItem("1", "牛乳", False)]
-        message = self.client._format_comment_message(items)
-
-        assert "1件の未チェック項目があります" in message
-        assert "• 牛乳" in message
-
-    def test_format_comment_message_multiple_items(self) -> None:
-        items = [
-            ShoppingItem("1", "牛乳", False),
-            ShoppingItem("2", "パン", False),
-            ShoppingItem("3", "卵", False),
-        ]
-        message = self.client._format_comment_message(items)
-
-        assert "3件の未チェック項目があります" in message
-        assert "• 牛乳" in message
-        assert "• パン" in message
-        assert "• 卵" in message
 
 
 class TestNotionAPIError:
