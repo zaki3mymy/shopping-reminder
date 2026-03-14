@@ -19,7 +19,8 @@ module "shopping_reminder" {
   # 必須変数
   notion_api_key      = var.notion_api_key
   notion_database_id  = var.notion_database_id
-  notion_page_id      = var.notion_page_id
+  notify_api_key      = var.notify_api_key
+  notify_api_url      = var.notify_api_url
   lambda_zip_path     = var.lambda_zip_path
   lambda_source_code_hash = var.lambda_source_code_hash
 
@@ -84,7 +85,7 @@ sequenceDiagram
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 5.92 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.100.0 |
 
 ## Modules
 
@@ -118,9 +119,10 @@ No modules.
 | <a name="input_lambda_source_code_hash"></a> [lambda\_source\_code\_hash](#input\_lambda\_source\_code\_hash) | Base64 encoded hash of the Lambda zip file | `string` | n/a | yes |
 | <a name="input_lambda_timeout"></a> [lambda\_timeout](#input\_lambda\_timeout) | Lambda function timeout in seconds | `number` | `30` | no |
 | <a name="input_lambda_zip_path"></a> [lambda\_zip\_path](#input\_lambda\_zip\_path) | Path to the Lambda deployment zip file | `string` | n/a | yes |
+| <a name="input_notify_api_key"></a> [notify\_api\_key](#input\_notify\_api\_key) | API key for the notification service | `string` | n/a | yes |
+| <a name="input_notify_api_url"></a> [notify\_api\_url](#input\_notify\_api\_url) | Base URL of the notification API | `string` | n/a | yes |
 | <a name="input_notion_api_key"></a> [notion\_api\_key](#input\_notion\_api\_key) | Notion API key for accessing the workspace | `string` | n/a | yes |
 | <a name="input_notion_database_id"></a> [notion\_database\_id](#input\_notion\_database\_id) | ID of the Notion database containing shopping list items | `string` | n/a | yes |
-| <a name="input_notion_page_id"></a> [notion\_page\_id](#input\_notion\_page\_id) | ID of the Notion page where comments will be posted | `string` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Name of the AWS Resource Group | `string` | `"shopping-reminder-resources"` | no |
 | <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | EventBridge schedule expression for the reminder (JST 17:00 = UTC 08:00) | `string` | `"cron(0 8 * * ? *)"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to all resources | `map(string)` | <pre>{<br/>  "ManagedBy": "terraform",<br/>  "Project": "shopping-reminder"<br/>}</pre> | no |
@@ -146,7 +148,7 @@ No modules.
 ## セキュリティ
 
 - **IAMロール**: 最小権限の原則に従い、CloudWatch Logsの作成・書き込み権限のみ
-- **Sensitive変数**: `notion_api_key`は`sensitive = true`でマーク
+- **Sensitive変数**: `notion_api_key`と`notify_api_key`は`sensitive = true`でマーク
 - **VPC**: 不要なVPC設定は省略し、シンプルな構成を維持
 
 ## 監視とトラブルシューティング

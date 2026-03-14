@@ -49,7 +49,10 @@ python -m zipfile -c dist/lambda_function.zip src/shopping_reminder/*
 # Notion API設定
 notion_api_key     = "secret_xxxxxxxxxxxx"  # NotionのIntegrationから取得
 notion_database_id = "your-database-id"     # ショッピングリストデータベースのID
-notion_page_id     = "your-page-id"         # コメント投稿先ページのID
+
+# 通知API設定
+notify_api_key = "your-notify-api-key"      # なんでもお知らせくんAPIキー
+notify_api_url = "https://your-api-url"     # なんでもお知らせくんAPIのベースURL
 
 # Lambda設定
 lambda_function_name = "shopping-reminder"
@@ -262,9 +265,10 @@ environment {
 | <a name="input_lambda_function_name"></a> [lambda\_function\_name](#input\_lambda\_function\_name) | Name of the Lambda function | `string` | `"shopping-reminder"` | no |
 | <a name="input_lambda_memory_size"></a> [lambda\_memory\_size](#input\_lambda\_memory\_size) | Lambda function memory size in MB | `number` | `128` | no |
 | <a name="input_lambda_timeout"></a> [lambda\_timeout](#input\_lambda\_timeout) | Lambda function timeout in seconds | `number` | `30` | no |
+| <a name="input_notify_api_key"></a> [notify\_api\_key](#input\_notify\_api\_key) | API key for the notification service | `string` | n/a | yes |
+| <a name="input_notify_api_url"></a> [notify\_api\_url](#input\_notify\_api\_url) | Base URL of the notification API | `string` | n/a | yes |
 | <a name="input_notion_api_key"></a> [notion\_api\_key](#input\_notion\_api\_key) | Notion API key for accessing the workspace | `string` | n/a | yes |
 | <a name="input_notion_database_id"></a> [notion\_database\_id](#input\_notion\_database\_id) | ID of the Notion database containing shopping list items | `string` | n/a | yes |
-| <a name="input_notion_page_id"></a> [notion\_page\_id](#input\_notion\_page\_id) | ID of the Notion page where comments will be posted | `string` | n/a | yes |
 | <a name="input_output_zip_path"></a> [output\_zip\_path](#input\_output\_zip\_path) | Path where the Lambda deployment zip file will be created | `string` | `"../../../dist/lambda_function.zip"` | no |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Name of the AWS Resource Group | `string` | `"shopping-reminder-resources"` | no |
 | <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | EventBridge schedule expression for the reminder (JST 17:00 = UTC 08:00) | `string` | `"cron(0 8 * * ? *)"` | no |
