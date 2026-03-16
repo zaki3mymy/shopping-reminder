@@ -14,7 +14,8 @@ class TestShoppingReminderProcessor:
             {
                 "NOTION_API_KEY": "secret_test_key",
                 "NOTION_DATABASE_ID": "test_database_id",
-                "NOTION_PAGE_ID": "test_page_id",
+                "NOTIFY_API_KEY": "test_notify_key",
+                "NOTIFY_API_URL": "https://example.com/prod",
             }
         )
         self.processor = ShoppingReminderProcessor(self.config)
@@ -22,16 +23,22 @@ class TestShoppingReminderProcessor:
     def test_processor_initialization(self) -> None:
         assert self.processor.config == self.config
         assert self.processor.notion_client is not None
+        assert self.processor.notify_client is not None
 
+    @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
-    def test_process_with_unchecked_items(self, mock_notion_client_class: Mock) -> None:
+    def test_process_with_unchecked_items(
+        self, mock_notion_client_class: Mock, mock_notify_client_class: Mock
+    ) -> None:
         # モックの設定
-        mock_client = Mock()
-        mock_notion_client_class.return_value = mock_client
+        mock_notion = Mock()
+        mock_notion_client_class.return_value = mock_notion
+        mock_notify = Mock()
+        mock_notify_client_class.return_value = mock_notify
 
         unchecked_items = [ShoppingItem("1", "牛乳", False), ShoppingItem("2", "パン", False)]
-        mock_client.query_unchecked_items.return_value = unchecked_items
-        mock_client.create_comment.return_value = NotificationResult(
+        mock_notion.query_unchecked_items.return_value = unchecked_items
+        mock_notify.send_notification.return_value = NotificationResult(
             success=True, message="2件の未チェック項目について通知を送信しました。"
         )
 
@@ -40,16 +47,21 @@ class TestShoppingReminderProcessor:
 
         assert result.success is True
         assert "2件の未チェック項目について通知を送信しました" in result.message
-        mock_client.query_unchecked_items.assert_called_once()
-        mock_client.create_comment.assert_called_once_with(unchecked_items)
+        mock_notion.query_unchecked_items.assert_called_once()
+        mock_notify.send_notification.assert_called_once_with(unchecked_items)
 
+    @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
-    def test_process_with_no_unchecked_items(self, mock_notion_client_class: Mock) -> None:
-        mock_client = Mock()
-        mock_notion_client_class.return_value = mock_client
+    def test_process_with_no_unchecked_items(
+        self, mock_notion_client_class: Mock, mock_notify_client_class: Mock
+    ) -> None:
+        mock_notion = Mock()
+        mock_notion_client_class.return_value = mock_notion
+        mock_notify = Mock()
+        mock_notify_client_class.return_value = mock_notify
 
-        mock_client.query_unchecked_items.return_value = []
-        mock_client.create_comment.return_value = NotificationResult(
+        mock_notion.query_unchecked_items.return_value = []
+        mock_notify.send_notification.return_value = NotificationResult(
             success=True, message="未チェック項目はありません。通知は送信されませんでした。"
         )
 
@@ -58,15 +70,19 @@ class TestShoppingReminderProcessor:
 
         assert result.success is True
         assert "未チェック項目はありません" in result.message
-        mock_client.query_unchecked_items.assert_called_once()
-        mock_client.create_comment.assert_called_once_with([])
+        mock_notion.query_unchecked_items.assert_called_once()
+        mock_notify.send_notification.assert_called_once_with([])
 
+    @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
-    def test_process_with_query_error(self, mock_notion_client_class: Mock) -> None:
-        mock_client = Mock()
-        mock_notion_client_class.return_value = mock_client
+    def test_process_with_query_error(
+        self, mock_notion_client_class: Mock, mock_notify_client_class: Mock
+    ) -> None:
+        mock_notion = Mock()
+        mock_notion_client_class.return_value = mock_notion
+        mock_notify_client_class.return_value = Mock()
 
-        mock_client.query_unchecked_items.side_effect = Exception("データベースクエリエラー")
+        mock_notion.query_unchecked_items.side_effect = Exception("データベースクエリエラー")
 
         processor = ShoppingReminderProcessor(self.config)
         result = processor.process()
@@ -75,22 +91,27 @@ class TestShoppingReminderProcessor:
         assert "処理中にエラーが発生しました" in result.message
         assert "データベースクエリエラー" in result.error
 
+    @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
-    def test_process_with_comment_creation_error(self, mock_notion_client_class: Mock) -> None:
-        mock_client = Mock()
-        mock_notion_client_class.return_value = mock_client
+    def test_process_with_notification_error(
+        self, mock_notion_client_class: Mock, mock_notify_client_class: Mock
+    ) -> None:
+        mock_notion = Mock()
+        mock_notion_client_class.return_value = mock_notion
+        mock_notify = Mock()
+        mock_notify_client_class.return_value = mock_notify
 
         unchecked_items = [ShoppingItem("1", "牛乳", False)]
-        mock_client.query_unchecked_items.return_value = unchecked_items
-        mock_client.create_comment.return_value = NotificationResult(
-            success=False, message="コメントの作成に失敗しました。", error="API key が無効です"
+        mock_notion.query_unchecked_items.return_value = unchecked_items
+        mock_notify.send_notification.return_value = NotificationResult(
+            success=False, message="通知の送信に失敗しました。", error="API key が無効です"
         )
 
         processor = ShoppingReminderProcessor(self.config)
         result = processor.process()
 
         assert result.success is False
-        assert "コメントの作成に失敗しました" in result.message
+        assert "通知の送信に失敗しました" in result.message
         assert "API key が無効です" in result.error
 
 

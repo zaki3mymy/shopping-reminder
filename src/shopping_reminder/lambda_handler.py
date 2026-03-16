@@ -3,6 +3,7 @@ from typing import Dict, Any
 
 from config import Config, ConfigError
 from notion_client import NotionClient
+from notify_client import NotifyClient
 from models import NotificationResult
 from logger import get_logger
 
@@ -15,6 +16,7 @@ class ShoppingReminderProcessor:
     def __init__(self, config: Config) -> None:
         self.config = config
         self.notion_client = NotionClient(config)
+        self.notify_client = NotifyClient(config)
         logger.info("ShoppingReminderProcessor initialized successfully")
 
     def process(self) -> NotificationResult:
@@ -30,9 +32,9 @@ class ShoppingReminderProcessor:
             for item in unchecked_items:
                 logger.info(f"Unchecked item: {item.name} (ID: {item.id})")
 
-            # 2. コメントを作成（未チェック項目がない場合も含む）
-            logger.info("Creating comment notification")
-            result = self.notion_client.create_comment(unchecked_items)
+            # 2. 通知を送信（未チェック項目がない場合も含む）
+            logger.info("Sending notification")
+            result = self.notify_client.send_notification(unchecked_items)
 
             if result.success:
                 logger.info(f"Process completed successfully: {result.message}")

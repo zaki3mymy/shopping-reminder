@@ -20,7 +20,8 @@ class Config:
 
     notion_api_key: str
     notion_database_id: str
-    notion_page_id: str
+    notify_api_key: str
+    notify_api_url: str
 
     def __init__(self) -> None:
         """環境変数から設定を読み込み"""
@@ -32,8 +33,11 @@ class Config:
         self.notion_database_id = self._get_required_env_var("NOTION_DATABASE_ID")
         logger.info(f"NOTION_DATABASE_ID: {self.notion_database_id}")
 
-        self.notion_page_id = self._get_required_env_var("NOTION_PAGE_ID")
-        logger.info(f"NOTION_PAGE_ID: {self.notion_page_id}")
+        self.notify_api_key = self._get_required_env_var("NOTIFY_API_KEY")
+        logger.info(f"NOTIFY_API_KEY loaded (length: {len(self.notify_api_key)} chars)")
+
+        self.notify_api_url = self._get_required_env_var("NOTIFY_API_URL")
+        logger.info(f"NOTIFY_API_URL: {self.notify_api_url}")
 
         logger.info("Configuration loaded successfully")
 
@@ -44,7 +48,8 @@ class Config:
 
         config.notion_api_key = cls._get_required_dict_value(config_dict, "NOTION_API_KEY")
         config.notion_database_id = cls._get_required_dict_value(config_dict, "NOTION_DATABASE_ID")
-        config.notion_page_id = cls._get_required_dict_value(config_dict, "NOTION_PAGE_ID")
+        config.notify_api_key = cls._get_required_dict_value(config_dict, "NOTIFY_API_KEY")
+        config.notify_api_url = cls._get_required_dict_value(config_dict, "NOTIFY_API_URL")
 
         return config
 
@@ -74,5 +79,6 @@ class Config:
             f"Config("
             f"notion_api_key=***HIDDEN***, "
             f"notion_database_id={self.notion_database_id}, "
-            f"notion_page_id={self.notion_page_id})"
+            f"notify_api_key=***HIDDEN***, "
+            f"notify_api_url={self.notify_api_url})"
         )

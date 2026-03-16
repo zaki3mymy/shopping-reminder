@@ -12,7 +12,10 @@ module "shopping_reminder" {
   # Notion configuration
   notion_api_key     = var.notion_api_key
   notion_database_id = var.notion_database_id
-  notion_page_id     = var.notion_page_id
+
+  # Notification API configuration
+  notify_api_key = var.notify_api_key
+  notify_api_url = var.notify_api_url
 
   # Lambda configuration
   lambda_function_name    = var.lambda_function_name

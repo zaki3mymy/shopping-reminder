@@ -9,8 +9,14 @@ variable "notion_database_id" {
   type        = string
 }
 
-variable "notion_page_id" {
-  description = "ID of the Notion page where comments will be posted"
+variable "notify_api_key" {
+  description = "API key for the notification service"
+  type        = string
+  sensitive   = true
+}
+
+variable "notify_api_url" {
+  description = "Base URL of the notification API"
   type        = string
 }
 
