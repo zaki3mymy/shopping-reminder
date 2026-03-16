@@ -73,7 +73,8 @@ jobs:
         terraform apply \
           -var="notion_api_key=${{ secrets.NOTION_API_KEY }}" \
           -var="notion_database_id=${{ secrets.NOTION_DATABASE_ID }}" \
-          -var="notion_page_id=${{ secrets.NOTION_PAGE_ID }}" \
+          -var="notify_api_key=${{ secrets.NOTIFY_API_KEY }}" \
+          -var="notify_api_url=${{ secrets.NOTIFY_API_URL }}" \
           -auto-approve
 
     - name: Test Lambda deployment
