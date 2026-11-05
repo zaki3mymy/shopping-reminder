@@ -118,6 +118,7 @@ jobs:
         github_token: ${{ secrets.github_token }}
         working_directory: terraform/
         tflint_version: "latest"
+        tflint_config: "${{ github.workspace }}/terraform/.tflint.hcl"
         flags: "--recursive"
 
     - name: Terraform Docs Check - Module
