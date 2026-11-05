@@ -1,22 +1,19 @@
 name: CD
 
+# develop への push で dev 環境に、main（リリース）への push で本番環境にデプロイする
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
     paths:
       - 'src/**'
+      - 'tests/**'
       - 'terraform/**'
       - 'pyproject.toml'
+      - 'uv.lock'
       - '.github/workflows/cd.yml'
+      # CD は ci.yml を呼び出すため、ci.yml の変更でも CD の起動に問題がないか確認する
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-        - production
 
 env:
   AWS_REGION: "ap-northeast-1"
@@ -26,13 +23,43 @@ permissions:
   contents: read
 
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+    # 再利用ワークフローのジョブは、呼び出し元が許可した以上の権限を要求できない。
+    # ci.yml の terraform-plan ジョブが pull-requests: write を要求するため、ここで許可する
+    # （CD では terraform-plan は実行されないが、権限のチェックは起動時に行われる）。
+    # checks: write は TFLint（reviewdog）が結果を報告するため
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      checks: write
+
   deploy:
+    needs: ci
     runs-on: ubuntu-latest
     name: Deploy to AWS
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'develop' }}
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Set environment config
+      id: config
+      run: |
+        if [ "${{ github.ref_name }}" = "main" ]; then
+          echo "env=prod" >> $GITHUB_OUTPUT
+          echo "tf_dir=terraform/environments/production" >> $GITHUB_OUTPUT
+          echo "state_key=shopping-reminder/terraform.tfstate" >> $GITHUB_OUTPUT
+          # 本番環境は dry run で呼び出し、通知は送信しない
+          echo 'test_payload={"dry_run": true}' >> $GITHUB_OUTPUT
+        else
+          echo "env=dev" >> $GITHUB_OUTPUT
+          echo "tf_dir=terraform/environments/dev" >> $GITHUB_OUTPUT
+          echo "state_key=shopping-reminder/dev/terraform.tfstate" >> $GITHUB_OUTPUT
+          echo 'test_payload={}' >> $GITHUB_OUTPUT
+        fi
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -40,36 +67,27 @@ jobs:
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      with:
-        enable-cache: true
-
-    - name: Install dependencies
-      run: uv sync --dev
-
-    - name: Run tests before deployment
-      run: uv run pytest --cov-report=term
-
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
       with:
         terraform_version: "~1.9.0"
+        # terraform output -raw の値をそのまま使うため、ラッパーを無効にする
+        terraform_wrapper: false
 
     - name: Create dist directory
       run: mkdir -p dist
 
     - name: Terraform Init
       run: |
-        cd terraform/environments/production
+        cd ${{ steps.config.outputs.tf_dir }}
         terraform init \
           -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
-          -backend-config="key=shopping-reminder/terraform.tfstate" \
+          -backend-config="key=${{ steps.config.outputs.state_key }}" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
     - name: Terraform Apply
       run: |
-        cd terraform/environments/production
+        cd ${{ steps.config.outputs.tf_dir }}
         terraform apply \
           -var="notion_api_key=${{ secrets.NOTION_API_KEY }}" \
           -var="notion_database_id=${{ secrets.NOTION_DATABASE_ID }}" \
@@ -77,14 +95,30 @@ jobs:
           -var="notify_api_url=${{ secrets.NOTIFY_API_URL }}" \
           -auto-approve
 
+    # dev 環境は通知の送信まで確認する（テスト用の Notion データベースを使う）。
+    # 本番環境は dry run で呼び出し、Notion の読み込みまでを確認して通知は送信しない
     - name: Test Lambda deployment
+      env:
+        PAYLOAD: ${{ steps.config.outputs.test_payload }}
       run: |
+        FUNCTION_NAME=$(cd ${{ steps.config.outputs.tf_dir }} && terraform output -raw lambda_function_name)
+
         aws lambda invoke \
-          --function-name shopping-reminder \
-          --payload '{}' \
+          --function-name "$FUNCTION_NAME" \
+          --cli-binary-format raw-in-base64-out \
+          --payload "$PAYLOAD" \
           response.json
         echo "Lambda response:"
         cat response.json
+        echo
+
+        STATUS_CODE=$(python3 -c 'import json; print(json.load(open("response.json")).get("statusCode"))')
+        if [ "$STATUS_CODE" = "200" ]; then
+          echo "Lambda test passed!"
+        else
+          echo "Lambda test failed! Expected statusCode 200, got $STATUS_CODE"
+          exit 1
+        fi
 
     - name: Cleanup
       run: rm -f response.json
