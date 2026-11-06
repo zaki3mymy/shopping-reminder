@@ -1,9 +1,10 @@
 import json
 from unittest.mock import Mock, patch
+
 import pytest
 
-from src.shopping_reminder.notion_client import NotionClient, NotionAPIError
 from src.shopping_reminder.config import Config
+from src.shopping_reminder.notion_client import NotionAPIError, NotionClient
 
 
 class TestNotionClient:

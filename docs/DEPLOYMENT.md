@@ -2,13 +2,26 @@
 
 ## 🚀 AWSデプロイ
 
-### 前提条件
+### GitHub Actions によるデプロイ
+
+通常は GitHub Actions の CD（`.github/workflows/cd.yml`）でデプロイする。
+
+| ブランチ | デプロイ先 | Terraform | GitHub の Environment | デプロイ後の確認 |
+| --- | --- | --- | --- | --- |
+| `develop` | dev 環境（`dev-shopping-reminder`） | `terraform/environments/dev` | `develop` | Lambda を呼び出し、通知の送信まで確認する |
+| `main` | 本番環境（`shopping-reminder`） | `terraform/environments/production` | `prod` | Lambda を `{"dry_run": true}` で呼び出す（通知は送信しない） |
+
+dev 環境では EventBridge の定期実行を無効にしており、テスト用の Notion データベースを使う。
+
+### 手動でのデプロイ
+
+#### 前提条件
 
 - AWS CLI設定済み
 - Terraform >= 1.2.0 インストール済み
 - S3バケット作成済み（tfstateファイル用）
 
-### デプロイ手順
+#### デプロイ手順
 
 ```bash
 # Terraform環境初期化（本番環境）
@@ -32,7 +45,7 @@ terraform apply -var-file terraform.tfvars
 
 詳細は [terraform/README.md](../terraform/README.md) を参照
 
-### 必要な設定値
+#### 必要な設定値
 
 以下の値をterraform.tfvarsファイルに設定してください：
 

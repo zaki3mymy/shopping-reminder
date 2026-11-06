@@ -96,13 +96,22 @@ Markdownファイル作成・編集時は以下を実行：
 
 1. `gh issue list --state open` - オープンなIssueを確認
 2. `gh issue view <number>` - Issue詳細を確認・選択
-3. `git switch main && git pull origin main` - 最新のmainブランチに切り替え
-4. `git switch -c feature/<description>` - 作業用ブランチ作成（mainブランチから必ず作成）
+3. `git switch develop && git pull origin develop` - 最新のdevelopブランチに切り替え
+4. `git switch -c feature/<description>` - 作業用ブランチ作成（developブランチから必ず作成）
 5. TodoWriteツールでタスク管理・進捗追跡
 6. 実装・テスト・品質チェック（ruff、mypy、pytest全て通すこと）
 7. 段階的コミット（機能単位での細かいコミット）
 8. `git push -u origin <branch>` でプッシュ
-9. `gh pr create --title "..." --body "..."` でプルリクエスト作成
+9. `gh pr create --base develop --title "..." --body "..."` でプルリクエスト作成
+
+### ブランチ構成とデプロイ
+
+- `develop`: デフォルトブランチ。開発用のPRはdevelopに向けてスカッシュマージする
+- `main`: リリース用のブランチ。developからのリリースPRをマージコミットでマージする
+- CD（`.github/workflows/cd.yml`）
+  - developへのpush: dev環境（`terraform/environments/dev`、GitHubのEnvironment `develop`）にデプロイし、Lambdaを呼び出して通知の送信まで確認する
+  - mainへのpush: 本番環境（`terraform/environments/production`、GitHubのEnvironment `prod`）にデプロイし、Lambdaを `{"dry_run": true}` で呼び出す（通知は送信しない）
+- Environment と Secrets は [zaki3mymy/github](https://github.com/zaki3mymy/github) のTerraformで管理している
 
 ### プルリクエストタイトル規則
 
@@ -155,17 +164,21 @@ Issue #<number>を解決します。
 #### レビューコメント取得方法
 
 **専用スクリプト使用（推奨）**:
+
 ```bash
 get-review-threads.sh zaki3mymy shopping-reminder 5
 ```
+
 - 未解決のレビュースレッドのみを表示
 - `databaseId`フィールドでコメント返信に必要なIDを取得
 - 構造化されたJSON形式で出力
 
 **従来のAPI呼び出し**:
+
 ```bash
 gh api repos/{owner}/{repo}/pulls/{pr}/comments --paginate --jq '.[] | {id: .id, user: .user.login, path: .path, body: .body}'
 ```
+
 - 全コメントを表示（解決済みを含む）
 - 返信コメントも混在するため絞り込みが必要
 

@@ -1,19 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'terraform/**'
-      - 'pyproject.toml'
-      - 'uv.lock'
-      - '.pre-commit-config.yaml'
-      - '.python-version'
-      - '.github/workflows/ci.yml'
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
     paths:
       - 'src/**'
       - 'tests/**'
@@ -23,6 +12,8 @@ on:
       - '.pre-commit-config.yaml'
       - '.python-version'
       - '.github/workflows/ci.yml'
+  # develop / main への push では CD（cd.yml）から呼び出す
+  workflow_call:
 
 
 jobs:
@@ -112,6 +103,12 @@ jobs:
         terraform init -backend=false
         terraform validate
 
+    - name: Terraform validate (dev)
+      run: |
+        cd terraform/environments/dev
+        terraform init -backend=false
+        terraform validate
+
     - name: TFLint
       uses: reviewdog/action-tflint@c332ae72f14fd853c08323a60383b396cc34715a # v1.28.0
       with:
@@ -139,11 +136,22 @@ jobs:
         git-push: "false"
         fail-on-diff: "true"
 
+    - name: Terraform Docs Check - Dev
+      uses: terraform-docs/gh-actions@6de6da0cefcc6b4b7a5cbea4d79d97060733093c # v1.4.1
+      with:
+        working-dir: terraform/environments/dev/
+        output-file: README.md
+        output-method: inject
+        git-push: "false"
+        fail-on-diff: "true"
+
   terraform-plan:
     runs-on: ubuntu-latest
     name: Terraform Plan
     if: github.event_name == 'pull_request'
     needs: terraform-validate
+    # main（リリース）への PR は本番環境、develop への PR は dev 環境に対して plan する
+    environment: ${{ github.base_ref == 'main' && 'prod' || 'develop' }}
     permissions:
       id-token: write
       contents: read
@@ -151,6 +159,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Set environment config
+      id: config
+      run: |
+        if [ "${{ github.base_ref }}" = "main" ]; then
+          echo "tf_dir=terraform/environments/production" >> $GITHUB_OUTPUT
+          echo "state_key=shopping-reminder/terraform.tfstate" >> $GITHUB_OUTPUT
+        else
+          echo "tf_dir=terraform/environments/dev" >> $GITHUB_OUTPUT
+          echo "state_key=shopping-reminder/dev/terraform.tfstate" >> $GITHUB_OUTPUT
+        fi
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -165,10 +184,10 @@ jobs:
 
     - name: Terraform Plan
       run: |
-        cd terraform/environments/production
+        cd ${{ steps.config.outputs.tf_dir }}
         terraform init \
           -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
-          -backend-config="key=shopping-reminder/terraform.tfstate" \
+          -backend-config="key=${{ steps.config.outputs.state_key }}" \
           -backend-config="region=ap-northeast-1"
         terraform plan \
           -var="notion_api_key=${{ secrets.NOTION_API_KEY }}" \

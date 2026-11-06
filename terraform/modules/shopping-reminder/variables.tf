@@ -42,6 +42,12 @@ variable "schedule_expression" {
   default     = "cron(0 8 * * ? *)"
 }
 
+variable "schedule_enabled" {
+  description = "Whether the EventBridge schedule is enabled (disable it in environments that should not send reminders on a schedule)"
+  type        = bool
+  default     = true
+}
+
 variable "lambda_timeout" {
   description = "Lambda function timeout in seconds"
   type        = number

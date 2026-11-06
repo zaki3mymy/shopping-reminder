@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -17,7 +17,7 @@ class ShoppingItem:
 @dataclass
 class NotionDatabaseItem:
     id: str
-    properties: Dict[str, Any]
+    properties: dict[str, Any]
 
     def to_shopping_item(self) -> ShoppingItem:
         name_property = self.properties["名前"]
@@ -33,4 +33,4 @@ class NotionDatabaseItem:
 class NotificationResult:
     success: bool
     message: str
-    error: Optional[str] = None
+    error: str | None = None

@@ -1,11 +1,10 @@
 import json
 import urllib.error
-from typing import List
 from unittest.mock import Mock, patch
 
-from src.shopping_reminder.notify_client import NotifyClient, NotifyAPIError
-from src.shopping_reminder.models import ShoppingItem
 from src.shopping_reminder.config import Config
+from src.shopping_reminder.models import ShoppingItem
+from src.shopping_reminder.notify_client import NotifyAPIError, NotifyClient
 
 
 class TestNotifyClient:
@@ -44,7 +43,7 @@ class TestNotifyClient:
 
     @patch("urllib.request.urlopen")
     def test_send_notification_empty_items(self, mock_urlopen: Mock) -> None:
-        items: List[ShoppingItem] = []
+        items: list[ShoppingItem] = []
         result = self.client.send_notification(items)
 
         assert result.success is True
