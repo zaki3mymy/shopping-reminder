@@ -1,12 +1,12 @@
 import json
-from typing import Dict, Any
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
 
-from src.shopping_reminder.lambda_handler import handler, ShoppingReminderProcessor
-from src.shopping_reminder.models import ShoppingItem, NotificationResult
 from src.shopping_reminder.config import Config, ConfigError
+from src.shopping_reminder.lambda_handler import ShoppingReminderProcessor, handler
+from src.shopping_reminder.models import NotificationResult, ShoppingItem
 
 
 class TestShoppingReminderProcessor:
@@ -191,7 +191,7 @@ class TestLambdaHandler:
         )
 
         # イベントとコンテキストのダミー
-        event: Dict[str, Any] = {}
+        event: dict[str, Any] = {}
         context = Mock()
 
         response = handler(event, context)
@@ -214,7 +214,7 @@ class TestLambdaHandler:
         ):
             mock_config.side_effect = ConfigError("NOTION_API_KEY is required")
 
-            event: Dict[str, Any] = {}
+            event: dict[str, Any] = {}
             context = Mock()
 
             response = handler(event, context)
@@ -241,7 +241,7 @@ class TestLambdaHandler:
             error="データベースクエリエラー",
         )
 
-        event: Dict[str, Any] = {}
+        event: dict[str, Any] = {}
         context = Mock()
 
         response = handler(event, context)
@@ -256,7 +256,7 @@ class TestLambdaHandler:
     def test_handler_unexpected_error(self, mock_config_class: Mock) -> None:
         mock_config_class.side_effect = Exception("予期しないエラー")
 
-        event: Dict[str, Any] = {}
+        event: dict[str, Any] = {}
         context = Mock()
 
         response = handler(event, context)

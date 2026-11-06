@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any
 
 # Lambda環境での絶対インポート
 from logger import get_logger
@@ -10,8 +10,6 @@ logger = get_logger(__name__)
 
 class ConfigError(Exception):
     """設定に関するエラー"""
-
-    pass
 
 
 @dataclass
@@ -42,7 +40,7 @@ class Config:
         logger.info("Configuration loaded successfully")
 
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "Config":
+    def from_dict(cls, config_dict: dict[str, Any]) -> "Config":
         """辞書から設定を作成"""
         config = cls.__new__(cls)  # __init__を呼ばずにインスタンスを作成
 
@@ -64,7 +62,7 @@ class Config:
         return value.strip()
 
     @staticmethod
-    def _get_required_dict_value(config_dict: Dict[str, Any], key: str) -> str:
+    def _get_required_dict_value(config_dict: dict[str, Any], key: str) -> str:
         """必須の辞書の値を取得"""
         if key not in config_dict:
             raise ConfigError(f"Configuration key {key} is required")

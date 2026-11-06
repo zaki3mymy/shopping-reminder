@@ -1,8 +1,7 @@
 import logging
-from typing import Optional
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """
     アプリケーション用のロガーを取得する共通関数
 

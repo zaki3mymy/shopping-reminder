@@ -1,9 +1,10 @@
 import os
-import pytest
-from typing import Dict, Any
+from typing import Any
 
-from src.shopping_reminder.lambda_handler import handler
+import pytest
+
 from src.shopping_reminder.config import Config
+from src.shopping_reminder.lambda_handler import handler
 
 
 class TestE2E:
@@ -89,7 +90,7 @@ class TestE2E:
             pytest.skip("Test credentials not available")
 
         # Lambda イベントとコンテキストのダミー
-        event: Dict[str, Any] = {}
+        event: dict[str, Any] = {}
 
         # Mock context object
         class MockLambdaContext:
@@ -141,7 +142,7 @@ class TestE2E:
                 del os.environ[key]
 
         try:
-            event: Dict[str, Any] = {}
+            event: dict[str, Any] = {}
             context = type("MockContext", (), {"function_name": "test"})()
 
             response = handler(event, context)
