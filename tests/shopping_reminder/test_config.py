@@ -1,6 +1,7 @@
 import os
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from src.shopping_reminder.config import Config, ConfigError
 

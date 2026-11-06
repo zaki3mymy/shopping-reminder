@@ -1,11 +1,11 @@
 import json
-from typing import Dict, Any
+from typing import Any
 
 from config import Config, ConfigError
-from notion_client import NotionClient
-from notify_client import NotifyClient
-from models import NotificationResult
 from logger import get_logger
+from models import NotificationResult
+from notify_client import NotifyClient
+from notion_client import NotionClient
 
 logger = get_logger(__name__)
 
@@ -60,13 +60,13 @@ class ShoppingReminderProcessor:
             return result
 
         except Exception as e:
-            logger.exception(f"Unexpected error during processing: {str(e)}")
+            logger.exception("Unexpected error during processing")
             return NotificationResult(
                 success=False, message="処理中にエラーが発生しました。", error=str(e)
             )
 
 
-def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """AWS Lambda のエントリーポイント"""
     logger.info("Lambda handler started")
     logger.info(f"Event: {json.dumps(event) if event else 'No event data'}")
@@ -111,7 +111,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
 
     except ConfigError as e:
-        logger.exception(f"Configuration error: {str(e)}")
+        logger.exception("Configuration error")
         return {
             "statusCode": 400,
             "headers": {"Content-Type": "application/json"},
@@ -121,7 +121,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             ),
         }
     except Exception as e:
-        logger.exception(f"Unexpected Lambda error: {str(e)}")
+        logger.exception("Unexpected Lambda error")
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},

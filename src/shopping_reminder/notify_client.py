@@ -1,20 +1,19 @@
 import json
-import urllib.request
 import urllib.error
-from typing import List, Dict, Any
+import urllib.request
+from typing import Any
 
-# Lambda環境での絶対インポート
-from models import ShoppingItem, NotificationResult
 from config import Config
 from logger import get_logger
+
+# Lambda環境での絶対インポート
+from models import NotificationResult, ShoppingItem
 
 logger = get_logger(__name__)
 
 
 class NotifyAPIError(Exception):
     """通知API に関するエラー"""
-
-    pass
 
 
 class NotifyClient:
@@ -26,7 +25,7 @@ class NotifyClient:
         logger.info("NotifyClient initialized")
         logger.info(f"Notify URL: {self.notify_url}")
 
-    def send_notification(self, items: List[ShoppingItem]) -> NotificationResult:
+    def send_notification(self, items: list[ShoppingItem]) -> NotificationResult:
         """未チェック項目のリストを通知APIに送信"""
         if not items:
             logger.info("No unchecked items found - skipping notification")
@@ -48,12 +47,12 @@ class NotifyClient:
             )
 
         except NotifyAPIError as e:
-            logger.exception(f"Failed to send notification: {str(e)}")
+            logger.exception("Failed to send notification")
             return NotificationResult(
                 success=False, message="通知の送信に失敗しました。", error=str(e)
             )
 
-    def _format_message(self, items: List[ShoppingItem]) -> str:
+    def _format_message(self, items: list[ShoppingItem]) -> str:
         """通知用のメッセージを作成"""
         count = len(items)
         message = f"🛒 {count}件の未チェック項目があります:\n\n"
@@ -64,7 +63,7 @@ class NotifyClient:
         message += "\n買い忘れがないよう確認をお願いします！"
         return message
 
-    def _make_post_request(self, url: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _make_post_request(self, url: str, data: dict[str, Any]) -> dict[str, Any]:
         """通知APIにPOSTリクエストを送信"""
         logger.info(f"Making POST request to: {url}")
 
@@ -111,5 +110,5 @@ class NotifyClient:
             logger.exception(f"URL error occurred: {e.reason}")
             raise NotifyAPIError(f"URL error: {e.reason}") from e
         except json.JSONDecodeError as e:
-            logger.exception(f"JSON decode error occurred: {e}")
+            logger.exception("JSON decode error occurred")
             raise NotifyAPIError(f"JSON decode error: {e}") from e

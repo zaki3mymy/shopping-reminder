@@ -1,7 +1,8 @@
-from typing import Dict, Any
+from typing import Any
+
 import pytest
 
-from src.shopping_reminder.models import ShoppingItem, NotionDatabaseItem, NotificationResult
+from src.shopping_reminder.models import NotificationResult, NotionDatabaseItem, ShoppingItem
 
 
 class TestShoppingItem:
@@ -88,7 +89,7 @@ class TestNotionDatabaseItem:
         assert shopping_item.checked is False
 
     def test_to_shopping_item_missing_properties(self) -> None:
-        properties: Dict[str, Any] = {}
+        properties: dict[str, Any] = {}
         notion_item = NotionDatabaseItem(id="999", properties=properties)
 
         with pytest.raises(KeyError):

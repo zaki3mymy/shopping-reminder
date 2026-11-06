@@ -1,20 +1,19 @@
 import json
-import urllib.request
 import urllib.parse
-from typing import List, Dict, Any
+import urllib.request
+from typing import Any
 
-# Lambda環境での絶対インポート
-from models import ShoppingItem, NotionDatabaseItem
 from config import Config
 from logger import get_logger
+
+# Lambda環境での絶対インポート
+from models import NotionDatabaseItem, ShoppingItem
 
 logger = get_logger(__name__)
 
 
 class NotionAPIError(Exception):
     """Notion API に関するエラー"""
-
-    pass
 
 
 class NotionClient:
@@ -26,7 +25,7 @@ class NotionClient:
         logger.info("NotionClient initialized")
         logger.info(f"Database ID: {config.notion_database_id}")
 
-    def query_unchecked_items(self) -> List[ShoppingItem]:
+    def query_unchecked_items(self) -> list[ShoppingItem]:
         """未チェック項目をデータベースから取得"""
         url = f"{self.base_url}/databases/{self.config.notion_database_id}/query"
         logger.info(f"Querying Notion database: {url}")
@@ -72,11 +71,11 @@ class NotionClient:
         logger.info(f"Query completed. Total items found: {len(results)}")
         return results
 
-    def _build_filter_for_unchecked_items(self) -> Dict[str, Any]:
+    def _build_filter_for_unchecked_items(self) -> dict[str, Any]:
         """未チェック項目を取得するためのフィルターを構築"""
         return {"property": "完了", "checkbox": {"equals": False}}
 
-    def _make_post_request(self, url: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _make_post_request(self, url: str, data: dict[str, Any]) -> dict[str, Any]:
         """Notion APIにPOSTリクエストを送信"""
         logger.info(f"Making POST request to: {url}")
 
@@ -128,5 +127,5 @@ class NotionClient:
             logger.exception(f"URL error occurred: {e.reason}")
             raise NotionAPIError(f"URL error: {e.reason}") from e
         except json.JSONDecodeError as e:
-            logger.exception(f"JSON decode error occurred: {e}")
+            logger.exception("JSON decode error occurred")
             raise NotionAPIError(f"JSON decode error: {e}") from e
