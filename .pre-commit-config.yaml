@@ -47,6 +47,14 @@ repos:
         files: ^terraform/environments/production/.*\.tf$
         pass_filenames: false
 
+    -   id: terraform-validate-dev
+        name: Validate Terraform dev environment
+        entry: bash -c "cd terraform/environments/dev && terraform validate"
+        language: system
+        types: [file]
+        files: ^terraform/environments/dev/.*\.tf$
+        pass_filenames: false
+
     -   id: tflint
         name: TFLint
         entry: tflint --chdir=terraform/ --recursive
@@ -71,6 +79,15 @@ repos:
         types: [file]
         files: ^terraform/environments/production/.*\.tf$
         args: [--config=terraform/environments/production/.terraform-docs.yml terraform/environments/production/]
+        pass_filenames: false
+
+    -   id: terraform-docs-dev
+        name: Terraform Docs - Dev
+        entry: terraform-docs
+        language: system
+        types: [file]
+        files: ^terraform/environments/dev/.*\.tf$
+        args: [--config=terraform/environments/dev/.terraform-docs.yml terraform/environments/dev/]
         pass_filenames: false
 
     -   id: unit-test

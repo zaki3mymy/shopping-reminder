@@ -55,6 +55,7 @@ resource "aws_cloudwatch_event_rule" "daily_reminder" {
   name                = "${var.lambda_function_name}-schedule"
   description         = "Trigger shopping reminder daily at 17:00 JST (08:00 UTC)"
   schedule_expression = var.schedule_expression
+  state               = var.schedule_enabled ? "ENABLED" : "DISABLED"
 
   tags = var.tags
 }
