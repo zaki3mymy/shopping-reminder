@@ -108,9 +108,12 @@ Markdownファイル作成・編集時は以下を実行：
 
 - `develop`: デフォルトブランチ。開発用のPRはdevelopに向けてスカッシュマージする
 - `main`: リリース用のブランチ。developからのリリースPRをマージコミットでマージする
+  - リリースPRのタイトルは `release: ...` にする（`skip-release-notes` のラベルが付き、リリースノートに載らない）
 - CD（`.github/workflows/cd.yml`）
   - developへのpush: dev環境（`terraform/environments/dev`、GitHubのEnvironment `develop`）にデプロイし、Lambdaを呼び出して通知の送信まで確認する
   - mainへのpush: 本番環境（`terraform/environments/production`、GitHubのEnvironment `prod`）にデプロイし、Lambdaを `{"dry_run": true}` で呼び出す（通知は送信しない）
+  - 本番のデプロイが成功したら、前のタグからのPRのラベルで次のSemVerのタグを打ち、GitHubリリースを作る
+- PRのタイトルはConventional Commitsの形にする。`label-pr-by-title.yml` がタイトルからラベル（`breaking` / `feat` / `fix` / `skip-release-notes`）を付ける。形が違うと失敗する
 - Environment と Secrets は [zaki3mymy/github](https://github.com/zaki3mymy/github) のTerraformで管理している
 
 ### プルリクエストタイトル規則
