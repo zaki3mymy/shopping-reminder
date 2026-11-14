@@ -86,3 +86,35 @@ variable "create_comprehensive_resource_group" {
   type        = bool
   default     = false
 }
+
+variable "environment" {
+  description = "Deployment environment name (dev or prod), set as the OTel resource attribute deployment.environment.name"
+  type        = string
+
+  validation {
+    condition     = contains(["dev", "prod"], var.environment)
+    error_message = "environment must be either \"dev\" or \"prod\"."
+  }
+}
+
+variable "otel_layer_arns" {
+  description = "ARNs of the OpenTelemetry Lambda layers (Python instrumentation + collector)"
+  type        = list(string)
+  default = [
+    # バージョンは https://github.com/open-telemetry/opentelemetry-lambda/releases で確認
+    # （layer-python/<version>・layer-collector/<version> のタグ）
+    "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-python-0_21_0:1",
+    "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-collector-amd64-0_24_0:1",
+  ]
+}
+
+variable "grafana_otlp_endpoint" {
+  description = "OTLP endpoint of Grafana Cloud (the stack's OTLP URL with /otlp appended). The otlphttp exporter appends /v1/traces and /v1/metrics"
+  type        = string
+  default     = "https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp"
+}
+
+variable "grafana_otlp_auth_parameter" {
+  description = "Name of the SSM parameter that holds the Authorization header value for Grafana Cloud OTLP (managed outside this repository)"
+  type        = string
+}
