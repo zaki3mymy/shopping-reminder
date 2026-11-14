@@ -123,3 +123,32 @@ jobs:
     - name: Cleanup
       run: rm -f response.json
       if: always()
+
+  # 本番（main）のデプロイが成功したら、次のバージョンのタグを打ち、GitHub リリースを作る
+  # バージョンは前のタグからの PR のラベルで決める（breaking: メジャー、feat: マイナー、それ以外: パッチ）
+  tag:
+    needs: deploy
+    if: github.ref_name == 'main'
+    permissions:
+      contents: write
+    uses: zaki3mymy/actions/.github/workflows/next-tag.yml@main
+
+  # GITHUB_TOKEN で push したタグでは release.yml が起動しないため、ここから直接リリースを作る
+  release:
+    needs: tag
+    if: needs.tag.outputs.tag != ''
+    permissions:
+      contents: write
+    uses: zaki3mymy/actions/.github/workflows/create-release.yml@main
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+
+  # 本番のリリース後に、main を develop に取り込む（main → develop の PR を作り、マージコミットでマージする）。
+  # マージするコミットはタグの有無に関係ないので、タグを打たなかったとき（数える PR がないとき）も取り込む
+  back-merge:
+    needs: deploy
+    if: github.ref_name == 'main'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/back-merge.yml
+    secrets: inherit

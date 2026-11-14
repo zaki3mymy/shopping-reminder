@@ -66,9 +66,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技術仕様
 
-- **言語**: Python 3.13+、標準ライブラリのみ使用
+- **言語**: Python 3.13+、標準ライブラリと `opentelemetry-api` のみ使用（`opentelemetry` は Lambda の OTel レイヤーが提供し、zip には含めない）
 - **AWSサービス**: Lambda、EventBridge（日本時間17時実行）
 - **外部API**: Notion API（データベースクエリ、コメント作成）
+- **オブザーバビリティ**: OpenTelemetry（Lambda の OTel レイヤー）でトレース・メトリクスを Grafana Cloud に送る（`docs/DEPLOYMENT.md` 参照）
 - **開発手法**: TDD（テスト駆動開発）
 - **カバレッジ**: 100%を目標
 
@@ -108,9 +109,14 @@ Markdownファイル作成・編集時は以下を実行：
 
 - `develop`: デフォルトブランチ。開発用のPRはdevelopに向けてスカッシュマージする
 - `main`: リリース用のブランチ。developからのリリースPRをマージコミットでマージする
+  - リリースPRのタイトルは `release: ...` にする（`skip-release-notes` のラベルが付き、リリースノートに載らない）
 - CD（`.github/workflows/cd.yml`）
   - developへのpush: dev環境（`terraform/environments/dev`、GitHubのEnvironment `develop`）にデプロイし、Lambdaを呼び出して通知の送信まで確認する
   - mainへのpush: 本番環境（`terraform/environments/production`、GitHubのEnvironment `prod`）にデプロイし、Lambdaを `{"dry_run": true}` で呼び出す（通知は送信しない）
+  - 本番のデプロイが成功したら、前のタグからのPRのラベルで次のSemVerのタグを打ち、GitHubリリースを作る
+  - 本番のデプロイの後に、mainをdevelopに取り込む（`back-merge.yml`。main → develop のPRを作り、マージコミットでマージする）
+- リリースするときは、Actionsの「Create release PR」（`release-pr.yml`）を手で実行し、できたリリースPRをマージコミットでマージする（詳細は `docs/release.md`）
+- PRのタイトルはConventional Commitsの形にする。`label-pr-by-title.yml` がタイトルからラベル（`breaking` / `feat` / `fix` / `skip-release-notes`）を付ける。形が違うと失敗する
 - Environment と Secrets は [zaki3mymy/github](https://github.com/zaki3mymy/github) のTerraformで管理している
 
 ### プルリクエストタイトル規則

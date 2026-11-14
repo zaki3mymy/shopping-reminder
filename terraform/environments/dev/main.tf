@@ -29,6 +29,10 @@ module "shopping_reminder" {
   schedule_expression = var.schedule_expression
   schedule_enabled    = false
 
+  # OpenTelemetry（トレース・メトリクスを Grafana Cloud に送る）
+  environment                 = "dev"
+  grafana_otlp_auth_parameter = "/app/grafana/dev/otlp_auth"
+
   # CloudWatch configuration
   cloudwatch_log_retention_days = var.cloudwatch_log_retention_days
 

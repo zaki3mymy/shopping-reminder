@@ -27,6 +27,10 @@ module "shopping_reminder" {
   # EventBridge configuration
   schedule_expression = var.schedule_expression
 
+  # OpenTelemetry（トレース・メトリクスを Grafana Cloud に送る）
+  environment                 = "prod"
+  grafana_otlp_auth_parameter = "/app/grafana/prod/otlp_auth"
+
   # CloudWatch configuration
   cloudwatch_log_retention_days = var.cloudwatch_log_retention_days
 

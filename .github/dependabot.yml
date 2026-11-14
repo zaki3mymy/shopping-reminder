@@ -1,3 +1,9 @@
+# PR のタイトル（コミットメッセージ）は commit-message で Conventional Commits の形に固定する。
+# 指定しないと Dependabot は最近のコミットの書き方を真似るため、type のない
+# 「Bump ... from ... to ...」になることがあり、PR のタイトルからラベルを付けるワークフロー
+# （label-pr-by-title.yml）で失敗する。
+#   本番の依存関係: chore(deps): bump ...
+#   開発用の依存関係: chore(deps-dev): bump ...
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -8,8 +14,16 @@ updates:
       github-actions:
         patterns:
           - "*"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
 
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
