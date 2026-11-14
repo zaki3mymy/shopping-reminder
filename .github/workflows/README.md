@@ -9,10 +9,12 @@
 ### CI (Continuous Integration) - `ci.yml`
 
 **トリガー**:
+
 - `develop` / `main` へのプルリクエスト
 - CD（`cd.yml`）からの呼び出し
 
 **ジョブ**:
+
 1. **lint-and-format**: ruffによるコードリント・フォーマットチェック
 2. **type-check**: mypyによる型チェック
 3. **test**: pytestによるテスト実行（カバレッジレポートをGitHub artifactsに保存）
@@ -22,16 +24,27 @@
 ### CD (Continuous Deployment) - `cd.yml`
 
 **トリガー**:
+
 - `develop` / `main` へのpush（自動デプロイ）
 - 手動実行（workflow_dispatch）
 
 **ジョブ**:
+
 1. **ci**: `ci.yml` を呼び出す
 2. **deploy**: AWSへの自動デプロイ（develop: dev 環境、main: 本番環境）
    - Terraformによるインフラ構築・更新
    - Lambda関数の動作確認（dev は通常どおり、本番は `{"dry_run": true}` で通知を送らない）
 3. **tag**: 本番（main）のデプロイが成功したら、次のバージョンのタグを打つ（[zaki3mymy/actions](https://github.com/zaki3mymy/actions) の `next-tag.yml`）
 4. **release**: タグから GitHub リリースを作る（zaki3mymy/actions の `create-release.yml`）
+5. **back-merge**: 本番（main）のデプロイの後に、main を develop に取り込む（`back-merge.yml` を呼び出す）
+
+### リリース PR の作成 - `release-pr.yml`
+
+Actions の「Create release PR」を手で実行すると、次のバージョンを決めて `release: vX.Y.Z (develop → main)` の PR を作ります（開いていれば、タイトルと本文を最新にします）。本文はリリースノートです。タグは打ちません（main のデプロイの後に CD が打ちます）。マージは人が「Create a merge commit」で行います。
+
+### main → develop の取り込み - `back-merge.yml`
+
+main（タグの付いたコミット）を develop に取り込むため、main と同じコミットを指す一時的なブランチ（`back-merge/<sha>`）から develop への PR を作り、マージコミットでマージします。CD から呼ばれるほか、Actions の「Back-merge main into develop」から手で実行できます。自動のマージに失敗したときは PR が開いたまま残るので、「Create a merge commit」でマージしてください。
 
 ### リリース - `release.yml`
 
@@ -42,7 +55,7 @@
 PR のタイトル（Conventional Commits）から、種類に応じたラベルを付けます（zaki3mymy/actions の `label-pr-by-title.yml`）。タイトルの形が違うときは失敗します。
 
 | タイトル | ラベル |
-|---|---|
+| --- | --- |
 | `feat!:` など `!` 付き | `breaking`（メジャーを上げる） |
 | `feat:` | `feat`（マイナーを上げる） |
 | `fix:` | `fix` |
@@ -53,7 +66,9 @@ PR のタイトル（Conventional Commits）から、種類に応じたラベル
 - 本番にデプロイしたものに、SemVer のタグ（`vX.Y.Z`）を打ち、GitHub リリースを作ります。
 - 次のバージョンは、前のタグからの PR のラベルで決めます（`breaking`: メジャー、`feat`: マイナー、それ以外: パッチ）。
 - リリースノートは GitHub の自動生成で、PR のラベルごとの見出しに振り分けます（`.github/release.yml`）。
-- develop から main へのリリース PR は `release: ...` のタイトルにします。
+- develop から main へのリリース PR は `release: ...` のタイトルにします（`release-pr.yml` が作ります）。
+- リリースの後、CD が main を develop に取り込みます（`back-merge.yml`）。
+- 流れの詳細は [docs/release.md](../../docs/release.md) を参照してください。
 
 ## 必要なSecrets設定
 
@@ -65,6 +80,11 @@ Secrets と Environment（`develop` / `prod`）は、[zaki3mymy/github](https://
 - `NOTION_DATABASE_ID`: 監視対象NotionデータベースID
 - `NOTIFY_API_KEY`: なんでもお知らせくん API のキー
 - `NOTIFY_API_URL`: なんでもお知らせくん API のベースURL
+
+リリース PR の作成（`release-pr.yml`）と main → develop の取り込み（`back-merge.yml`）は、Environment を使わず、リポジトリの Secrets を参照します。
+
+- `BACK_MERGE_APP_CLIENT_ID`: PR を作ってマージする GitHub App の Client ID
+- `BACK_MERGE_APP_PRIVATE_KEY`: その GitHub App の秘密鍵
 
 ## ローカル開発での活用
 
@@ -91,12 +111,14 @@ terraform validate
 ## 品質ゲート
 
 **CI通過条件**:
+
 - 全てのlintチェックが通る
 - 型チェックエラーがない
 - 全てのテストが成功
 - Terraformファイルが有効
 
 **CD実行条件**:
+
 - CIが成功
 - テストが全て成功
 - AWSクレデンシャルが有効
@@ -104,11 +126,13 @@ terraform validate
 ## トラブルシューティング
 
 ### CIが失敗する場合
+
 1. Actions タブでログを確認
 2. 該当するチェックをローカルで再現
 3. 修正・コミット・プッシュで再実行
 
 ### CDが失敗する場合
+
 1. AWS認証情報を確認
 2. Terraformステートバケットのアクセス権限を確認
 3. Notion APIキーの有効性を確認
