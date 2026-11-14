@@ -8,13 +8,14 @@
 - **スケジュール**: EventBridgeが毎日17:00（JST）に実行
 - **通知**: 未チェック項目があればNotionページにコメントで通知
 - **ログ出力**: AWS Lambdaで処理結果を記録
+- **トレース・メトリクス**: OpenTelemetry で Grafana Cloud に送信
 
 ## 🏗️ システム構成
 
 ```text
 EventBridge (Schedule) → AWS Lambda → Notion API
-                           ↓
-                    CloudWatch Logs
+                           ↓      ↘
+                    CloudWatch Logs  Grafana Cloud（OTel のトレース・メトリクス）
 ```
 
 ## 🛠️ クイックスタート

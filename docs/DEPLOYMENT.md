@@ -82,6 +82,45 @@ aws lambda invoke \
 cat response.json
 ```
 
+### OTel テレメトリ（Grafana Cloud）
+
+Lambda には OTel の Python計装レイヤーと Collectorレイヤー（どちらも [opentelemetry-lambda](https://github.com/open-telemetry/opentelemetry-lambda) のコミュニティ製）をアタッチしている。アプリが送ったトレース・メトリクスを Collector が受け取り、Grafana Cloud に OTLP で送る。
+
+| テレメトリ | バックエンド | 確認方法 |
+| --- | --- | --- |
+| トレース | Grafana Cloud（Tempo） | Grafana の Explore（データソース: Tempo） |
+| メトリクス | Grafana Cloud（Prometheus 互換） | Grafana の Explore（データソース: Prometheus） |
+
+- Collector の設定は `src/shopping_reminder/collector.yaml` にまとめており、デプロイ時に Lambda の zip に含まれる。
+- zip には `opentelemetry` パッケージを含めず、Python計装レイヤーが提供する。計装レイヤーは `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler` でハンドラーをラップし、Lambda の呼び出しと `urllib` のリクエスト（Notion API・通知API）の span を作る。
+- 環境は、リソース属性 `deployment.environment.name`（と `deployment.environment`）の `dev`・`prod` で区別する。
+- コールドスタートのときは、実行環境の初期化が `init <関数名>`（属性 `faas.coldstart=true`）という span になり、そのとき呼ばれた実行と同じトレースに入る（Collector の `telemetryapi` receiver と `coldstart` processor）。
+
+アプリが作る span とメトリクス：
+
+| 種類 | 名前 | 内容 |
+| --- | --- | --- |
+| span | `process` | 処理全体。属性 `shopping_reminder.dry_run` |
+| span | `query_unchecked_items` | Notion からの未チェック項目の取得。属性 `notion.page_count`・`notion.unchecked_items_count` |
+| span | `send_notification` | 通知APIへの送信。属性 `notify.item_count`。失敗したときは span のステータスを ERROR にする |
+| メトリクス（counter） | `shopping_reminder.notifications.sent` | 通知を送った回数 |
+| メトリクス（histogram） | `shopping_reminder.items.unchecked` | 1回の実行での未チェック項目の数。属性 `dry_run` |
+
+メトリクスは累積値（cumulative）で送る。1日1回の実行でほぼ毎回コールドスタートになり、カウンタは毎回 0 から数え直すため、Grafana では `increase()` ではなく、その日の値（例: `max_over_time(...[1d])`）で見る。本番の CD の dry run の実行も記録されるので、未チェック項目の数は属性 `dry_run` で絞り込む。
+
+#### Grafana Cloud の認証情報
+
+Grafana Cloud に送るための Authorization ヘッダーの値（`Basic <base64(スタックの ID:トークン)>`）は、環境ごとに SSM Parameter Store の SecureString に置かれている前提で、パラメータはこのリポジトリの外（[zaki3mymy/account-baseline](https://github.com/zaki3mymy/account-baseline) の `grafana/`）で作成・管理する。
+
+| 環境 | パラメータ |
+| --- | --- |
+| dev | `/app/grafana/dev/otlp_auth` |
+| prod | `/app/grafana/prod/otlp_auth` |
+
+Collector レイヤーは SSM Parameter Store を読めないため、Terraform がこのパラメータを読み、Lambda の環境変数 `GRAFANA_CLOUD_OTLP_AUTH` に渡す。そのため、**この値は Terraform の state と Lambda の環境変数に残る**。送信先（`GRAFANA_CLOUD_OTLP_ENDPOINT`）は秘密ではないので、モジュールの変数 `grafana_otlp_endpoint` の既定値に書いている。値は、Grafana Cloud のスタックの OTLP の URL に `/otlp` を付けたもの。
+
+パラメータの値が変わったとき（トークンを作り直したときなど）は、このリポジトリでもう一度 apply すると、Lambda の環境変数が新しい値に変わる。
+
 ## 🐛 トラブルシューティング
 
 ### よくある問題

@@ -66,9 +66,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技術仕様
 
-- **言語**: Python 3.13+、標準ライブラリのみ使用
+- **言語**: Python 3.13+、標準ライブラリと `opentelemetry-api` のみ使用（`opentelemetry` は Lambda の OTel レイヤーが提供し、zip には含めない）
 - **AWSサービス**: Lambda、EventBridge（日本時間17時実行）
 - **外部API**: Notion API（データベースクエリ、コメント作成）
+- **オブザーバビリティ**: OpenTelemetry（Lambda の OTel レイヤー）でトレース・メトリクスを Grafana Cloud に送る（`docs/DEPLOYMENT.md` 参照）
 - **開発手法**: TDD（テスト駆動開発）
 - **カバレッジ**: 100%を目標
 
