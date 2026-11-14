@@ -8,8 +8,11 @@ from logger import get_logger
 
 # Lambda環境での絶対インポート
 from models import NotionDatabaseItem, ShoppingItem
+from opentelemetry import trace
 
 logger = get_logger(__name__)
+
+_tracer = trace.get_tracer("shopping_reminder")
 
 
 class NotionAPIError(Exception):
@@ -25,6 +28,7 @@ class NotionClient:
         logger.info("NotionClient initialized")
         logger.info(f"Database ID: {config.notion_database_id}")
 
+    @_tracer.start_as_current_span("query_unchecked_items")
     def query_unchecked_items(self) -> list[ShoppingItem]:
         """未チェック項目をデータベースから取得"""
         url = f"{self.base_url}/databases/{self.config.notion_database_id}/query"
@@ -69,6 +73,9 @@ class NotionClient:
             logger.info(f"Moving to next page with cursor: {start_cursor}")
 
         logger.info(f"Query completed. Total items found: {len(results)}")
+        span = trace.get_current_span()
+        span.set_attribute("notion.page_count", page_count)
+        span.set_attribute("notion.unchecked_items_count", len(results))
         return results
 
     def _build_filter_for_unchecked_items(self) -> dict[str, Any]:

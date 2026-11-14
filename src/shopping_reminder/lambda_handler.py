@@ -6,8 +6,19 @@ from logger import get_logger
 from models import NotificationResult
 from notify_client import NotifyClient
 from notion_client import NotionClient
+from opentelemetry import metrics, trace
+from opentelemetry.trace import Status, StatusCode
 
 logger = get_logger(__name__)
+
+_tracer = trace.get_tracer("shopping_reminder")
+_meter = metrics.get_meter("shopping_reminder")
+
+_unchecked_items_histogram = _meter.create_histogram(
+    "shopping_reminder.items.unchecked",
+    unit="1",
+    description="Number of unchecked items in the shopping list per run",
+)
 
 
 class ShoppingReminderProcessor:
@@ -19,12 +30,15 @@ class ShoppingReminderProcessor:
         self.notify_client = NotifyClient(config)
         logger.info("ShoppingReminderProcessor initialized successfully")
 
+    @_tracer.start_as_current_span("process")
     def process(self, dry_run: bool = False) -> NotificationResult:
         """メイン処理を実行
 
         dry_run が True のときは、Notion から未チェック項目を取得するところまで実行し、
         通知は送信しない（デプロイ後の動作確認用）
         """
+        span = trace.get_current_span()
+        span.set_attribute("shopping_reminder.dry_run", dry_run)
         try:
             logger.info(f"Starting shopping reminder process (dry_run={dry_run})")
 
@@ -32,6 +46,7 @@ class ShoppingReminderProcessor:
             logger.info("Querying unchecked items from Notion database")
             unchecked_items = self.notion_client.query_unchecked_items()
             logger.info(f"Found {len(unchecked_items)} unchecked items")
+            _unchecked_items_histogram.record(len(unchecked_items), {"dry_run": dry_run})
 
             for item in unchecked_items:
                 logger.info(f"Unchecked item: {item.name} (ID: {item.id})")
@@ -61,6 +76,9 @@ class ShoppingReminderProcessor:
 
         except Exception as e:
             logger.exception("Unexpected error during processing")
+            # 例外は結果に変えて返すため、span には自分で記録する
+            span.record_exception(e)
+            span.set_status(Status(StatusCode.ERROR, str(e)))
             return NotificationResult(
                 success=False, message="処理中にエラーが発生しました。", error=str(e)
             )
