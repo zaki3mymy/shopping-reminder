@@ -111,7 +111,7 @@ Lambda には OTel の Python計装レイヤーと Collectorレイヤー（ど�
 
 #### Grafana Cloud の認証情報
 
-Grafana Cloud に送るための Authorization ヘッダーの値（`Basic <base64(スタックの ID:トークン)>`）は、環境ごとに SSM Parameter Store の SecureString に置かれている前提で、パラメータはこのリポジトリの外（[zaki3mymy/account-baseline](https://github.com/zaki3mymy/account-baseline) の `grafana/`）で作成・管理する。
+Grafana Cloud に送るための Authorization ヘッダーの値（`Basic <base64(スタックの ID:トークン)>`）は、環境ごとに SSM Parameter Store の SecureString に置かれている前提とする（パラメータはこのリポジトリでは作成・管理しない）。
 
 | 環境 | パラメータ |
 | --- | --- |
