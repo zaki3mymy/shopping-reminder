@@ -1,0 +1,24 @@
+name: Back-merge main into develop
+
+# main を develop に取り込む（main → develop の PR を作り、マージコミットでマージする）。
+# タグは main のマージコミットに打つので、取り込まないと develop の履歴からタグを辿れない。
+#
+# - 本番のリリース後に CD（cd.yml）から呼ぶ。手で動かすこともできる（workflow_dispatch）
+# - PR の作成とマージは、取り込み専用の GitHub App のトークンで行う（BACK_MERGE_APP_CLIENT_ID / BACK_MERGE_APP_PRIVATE_KEY）。
+#   この App は develop の ruleset の対象外（bypass_mode = "exempt"）なので、
+#   スカッシュだけに制限している develop にも、マージコミットでマージできる
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  back-merge:
+    permissions:
+      contents: read
+    uses: zaki3mymy/actions/.github/workflows/back-merge.yml@main
+    secrets:
+      BACK_MERGE_APP_CLIENT_ID: ${{ secrets.BACK_MERGE_APP_CLIENT_ID }}
+      BACK_MERGE_APP_PRIVATE_KEY: ${{ secrets.BACK_MERGE_APP_PRIVATE_KEY }}
