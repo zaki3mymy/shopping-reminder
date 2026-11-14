@@ -95,6 +95,7 @@ Lambda には OTel の Python計装レイヤーと Collectorレイヤー（ど�
 - zip には `opentelemetry` パッケージを含めず、Python計装レイヤーが提供する。計装レイヤーは `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler` でハンドラーをラップし、Lambda の呼び出しと `urllib` のリクエスト（Notion API・通知API）の span を作る。
 - 環境は、リソース属性 `deployment.environment.name`（と `deployment.environment`）の `dev`・`prod` で区別する。
 - コールドスタートのときは、実行環境の初期化が `init <関数名>`（属性 `faas.coldstart=true`）という span になり、そのとき呼ばれた実行と同じトレースに入る（Collector の `telemetryapi` receiver と `coldstart` processor）。
+- 計装が付ける属性のうち、URL（`http.url`・`url.full`。Notion のデータベース ID と通知先の API Gateway のホストを含む）、AWS のアカウント ID（`cloud.account.id`）、関数の ARN（`cloud.resource_id`）は、Collector で消してから送る（`attributes/redact`・`resource/redact`）。そのため、urllib のメトリクス（`http.client.duration` など）では Notion と通知API を区別できない。トレースでは親の span（`query_unchecked_items`・`send_notification`）で区別できる。
 
 アプリが作る span とメトリクス：
 

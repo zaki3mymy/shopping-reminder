@@ -17,6 +17,30 @@ processors:
   # 実行の span を faas.invocation_id で見分け、初期化の span を faas.coldstart で見分けるので、
   # アプリの span に faas.coldstart を付けてはいけない
   coldstart:
+  # Grafana Cloud に出したくない属性を消す
+  #   - http.url・url.full: urllib の計装が、HTTP クライアントの span とメトリクスのラベルに付ける。
+  #     Notion のデータベース ID と、通知先（なんでもお知らせくん）の API Gateway のホストが入る。
+  #     url.full は新しいセマンティック規約（OTEL_SEMCONV_STABILITY_OPT_IN=http）での名前
+  #   - cloud.account.id: AWS のアカウント ID（Lambda の計装が実行の span に付ける）
+  #   - cloud.resource_id: 関数の ARN（アカウント ID を含む。同上）
+  # faas.invocation_id は coldstart processor が使うので消さない
+  attributes/redact:
+    actions:
+      - key: http.url
+        action: delete
+      - key: url.full
+        action: delete
+      - key: cloud.account.id
+        action: delete
+      - key: cloud.resource_id
+        action: delete
+  # リソースの属性にも付くことがあるので、同じく消す
+  resource/redact:
+    attributes:
+      - key: cloud.account.id
+        action: delete
+      - key: cloud.resource_id
+        action: delete
   # Lambda の応答を返してから送るようにする（実行の終わりに Grafana Cloud への送信を待たない）。
   # 送り終わるまで実行環境は止められない。パイプラインの最後に置く
   decouple:
@@ -31,9 +55,9 @@ service:
   pipelines:
     traces:
       receivers: [otlp, telemetryapi]
-      processors: [coldstart, decouple]
+      processors: [coldstart, attributes/redact, resource/redact, decouple]
       exporters: [otlphttp/grafana_cloud]
     metrics:
       receivers: [otlp]
-      processors: [decouple]
+      processors: [attributes/redact, resource/redact, decouple]
       exporters: [otlphttp/grafana_cloud]
