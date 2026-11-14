@@ -13,6 +13,14 @@ terraform {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+# Grafana Cloud に OTLP で送るための Authorization ヘッダーの値（Basic <base64(スタックの ID:トークン)>）。
+# 環境ごとに SSM Parameter Store に置かれている（このリポジトリの外で管理する）。
+# Lambda の Collector レイヤーは SSM を読めないため、ここで読んで Lambda の環境変数に渡す。
+# この値は Terraform の state と Lambda の環境変数に残る（docs/DEPLOYMENT.md 参照）
+data "aws_ssm_parameter" "grafana_otlp_auth" {
+  name = var.grafana_otlp_auth_parameter
+}
+
 # CloudWatch Log Group for Lambda
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/${var.lambda_function_name}"
@@ -33,12 +41,33 @@ resource "aws_lambda_function" "shopping_reminder" {
 
   source_code_hash = var.lambda_source_code_hash
 
+  # OTel Lambdaレイヤー: Python計装レイヤー + コレクターレイヤー（どちらもコミュニティ製）
+  # zipには opentelemetry パッケージが含まれないため、Layerから提供する
+  # AWS_LAMBDA_EXEC_WRAPPER（下記environment）でPython計装レイヤーがhandlerをラップする
+  layers = var.otel_layer_arns
+
   environment {
     variables = {
       NOTION_API_KEY     = var.notion_api_key
       NOTION_DATABASE_ID = var.notion_database_id
       NOTIFY_API_KEY     = var.notify_api_key
       NOTIFY_API_URL     = var.notify_api_url
+
+      AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-handler"
+      # zipに同梱した collector.yaml を使う（/var/task はLambdaのコード展開先）
+      OPENTELEMETRY_COLLECTOR_CONFIG_URI = "/var/task/collector.yaml"
+      OTEL_SERVICE_NAME                  = "shopping-reminder"
+      # 環境（dev・prod）。Grafana で環境ごとに絞り込むために付ける。
+      # deployment.environment.name は新しいセマンティック規約の名前で、古い名前も一緒に付けておく
+      OTEL_RESOURCE_ATTRIBUTES = "deployment.environment.name=${var.environment},deployment.environment=${var.environment}"
+      OTEL_TRACES_EXPORTER     = "otlp"
+      OTEL_METRICS_EXPORTER    = "otlp"
+      # メトリクスは SDK の既定の cumulative（累積値）で送る（Grafana Cloud は Prometheus 互換で累積値を前提にする）。
+      # 1日1回の実行でほぼ毎回コールドスタートになり、カウンタは毎回 0 から数え直すため、
+      # Grafana では increase() ではなく、その日の値（例: max_over_time(...[1d])）で見る
+      # collector.yaml が読む、Grafana Cloud の OTLP の送信先と Authorization ヘッダーの値
+      GRAFANA_CLOUD_OTLP_ENDPOINT = var.grafana_otlp_endpoint
+      GRAFANA_CLOUD_OTLP_AUTH     = data.aws_ssm_parameter.grafana_otlp_auth.value
     }
   }
 

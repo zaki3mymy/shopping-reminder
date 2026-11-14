@@ -8,8 +8,19 @@ from logger import get_logger
 
 # Lambda環境での絶対インポート
 from models import NotificationResult, ShoppingItem
+from opentelemetry import metrics, trace
+from opentelemetry.trace import Status, StatusCode
 
 logger = get_logger(__name__)
+
+_tracer = trace.get_tracer("shopping_reminder")
+_meter = metrics.get_meter("shopping_reminder")
+
+_notification_counter = _meter.create_counter(
+    "shopping_reminder.notifications.sent",
+    unit="1",
+    description="Number of notifications sent to the notify API",
+)
 
 
 class NotifyAPIError(Exception):
@@ -25,8 +36,11 @@ class NotifyClient:
         logger.info("NotifyClient initialized")
         logger.info(f"Notify URL: {self.notify_url}")
 
+    @_tracer.start_as_current_span("send_notification")
     def send_notification(self, items: list[ShoppingItem]) -> NotificationResult:
         """未チェック項目のリストを通知APIに送信"""
+        span = trace.get_current_span()
+        span.set_attribute("notify.item_count", len(items))
         if not items:
             logger.info("No unchecked items found - skipping notification")
             return NotificationResult(
@@ -42,12 +56,16 @@ class NotifyClient:
             logger.info(f"Notification response: {json.dumps(response_data)}")
 
             logger.info(f"Notification sent successfully for {len(items)} items")
+            _notification_counter.add(1)
             return NotificationResult(
                 success=True, message=f"{len(items)}件の未チェック項目について通知を送信しました。"
             )
 
         except NotifyAPIError as e:
             logger.exception("Failed to send notification")
+            # 例外は結果に変えて返すため、span には自分で記録する
+            span.record_exception(e)
+            span.set_status(Status(StatusCode.ERROR, str(e)))
             return NotificationResult(
                 success=False, message="通知の送信に失敗しました。", error=str(e)
             )

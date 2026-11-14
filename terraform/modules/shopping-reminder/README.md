@@ -107,6 +107,7 @@ No modules.
 | [aws_resourcegroups_group.shopping_reminder_all](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/resourcegroups_group) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
+| [aws_ssm_parameter.grafana_otlp_auth](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ssm_parameter) | data source |
 
 ## Inputs
 
@@ -114,6 +115,9 @@ No modules.
 |------|-------------|------|---------|:--------:|
 | <a name="input_cloudwatch_log_retention_days"></a> [cloudwatch\_log\_retention\_days](#input\_cloudwatch\_log\_retention\_days) | CloudWatch log retention period in days | `number` | `14` | no |
 | <a name="input_create_comprehensive_resource_group"></a> [create\_comprehensive\_resource\_group](#input\_create\_comprehensive\_resource\_group) | Whether to create a comprehensive resource group that includes all AWS resources | `bool` | `false` | no |
+| <a name="input_environment"></a> [environment](#input\_environment) | Deployment environment name (dev or prod), set as the OTel resource attribute deployment.environment.name | `string` | n/a | yes |
+| <a name="input_grafana_otlp_auth_parameter"></a> [grafana\_otlp\_auth\_parameter](#input\_grafana\_otlp\_auth\_parameter) | Name of the SSM parameter that holds the Authorization header value for Grafana Cloud OTLP (managed outside this repository) | `string` | n/a | yes |
+| <a name="input_grafana_otlp_endpoint"></a> [grafana\_otlp\_endpoint](#input\_grafana\_otlp\_endpoint) | OTLP endpoint of Grafana Cloud (the stack's OTLP URL with /otlp appended). The otlphttp exporter appends /v1/traces and /v1/metrics | `string` | `"https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp"` | no |
 | <a name="input_lambda_function_name"></a> [lambda\_function\_name](#input\_lambda\_function\_name) | Name of the Lambda function | `string` | `"shopping-reminder"` | no |
 | <a name="input_lambda_memory_size"></a> [lambda\_memory\_size](#input\_lambda\_memory\_size) | Lambda function memory size in MB | `number` | `128` | no |
 | <a name="input_lambda_source_code_hash"></a> [lambda\_source\_code\_hash](#input\_lambda\_source\_code\_hash) | Base64 encoded hash of the Lambda zip file | `string` | n/a | yes |
@@ -123,6 +127,7 @@ No modules.
 | <a name="input_notify_api_url"></a> [notify\_api\_url](#input\_notify\_api\_url) | Base URL of the notification API | `string` | n/a | yes |
 | <a name="input_notion_api_key"></a> [notion\_api\_key](#input\_notion\_api\_key) | Notion API key for accessing the workspace | `string` | n/a | yes |
 | <a name="input_notion_database_id"></a> [notion\_database\_id](#input\_notion\_database\_id) | ID of the Notion database containing shopping list items | `string` | n/a | yes |
+| <a name="input_otel_layer_arns"></a> [otel\_layer\_arns](#input\_otel\_layer\_arns) | ARNs of the OpenTelemetry Lambda layers (Python instrumentation + collector) | `list(string)` | <pre>[<br/>  "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-python-0_21_0:1",<br/>  "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-collector-amd64-0_24_0:1"<br/>]</pre> | no |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Name of the AWS Resource Group | `string` | `"shopping-reminder-resources"` | no |
 | <a name="input_schedule_enabled"></a> [schedule\_enabled](#input\_schedule\_enabled) | Whether the EventBridge schedule is enabled (disable it in environments that should not send reminders on a schedule) | `bool` | `true` | no |
 | <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | EventBridge schedule expression for the reminder (JST 17:00 = UTC 08:00) | `string` | `"cron(0 8 * * ? *)"` | no |
