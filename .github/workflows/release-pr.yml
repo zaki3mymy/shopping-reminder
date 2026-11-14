@@ -1,0 +1,24 @@
+name: Create release PR
+run-name: "Create release PR"
+
+# develop → main のリリース PR を作る（すでに開いていれば、タイトルと本文を最新にする）。
+# 「リリースする」と決めたときに手で実行する（workflow_dispatch）。
+#
+# - 次のバージョンは next-tag.yml で決める（タグは打たない。タグは main のデプロイの後に CD が打つ）
+# - 本文は .github/release.yml の見出しで振り分けたリリースノート
+# - PR は GitHub App のトークンで作る（GITHUB_TOKEN で作った PR では CI が起動しないため）
+# - マージは人が行う（マージコミットで。main へのマージが本番のデプロイになる）
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-pr:
+    permissions:
+      contents: write
+    uses: zaki3mymy/actions/.github/workflows/release-pr.yml@main
+    secrets:
+      BACK_MERGE_APP_CLIENT_ID: ${{ secrets.BACK_MERGE_APP_CLIENT_ID }}
+      BACK_MERGE_APP_PRIVATE_KEY: ${{ secrets.BACK_MERGE_APP_PRIVATE_KEY }}
