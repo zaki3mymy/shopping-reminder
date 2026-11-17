@@ -18,8 +18,7 @@ dependencies = [
 
 [tool.uv]
 # uv のバージョン。CI（setup-uv）もローカルもこの範囲の uv を使う。
-# uv のバージョンが変わると uv.lock の書き方（revision）が変わることがあるため、そろえる
-required-version = ">=0.13.8,<0.14"
+required-version = ">=0.13,<0.14"
 
 [build-system]
 requires = ["setuptools", "wheel"]

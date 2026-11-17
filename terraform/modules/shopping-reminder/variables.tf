@@ -97,20 +97,6 @@ variable "environment" {
   }
 }
 
-variable "otel_layer_arns" {
-  description = "ARNs of the OpenTelemetry Lambda layers (Python instrumentation + collector)"
-  type        = list(string)
-  default = [
-    # バージョンは https://github.com/open-telemetry/opentelemetry-lambda/releases で確認
-    # （layer-python/<version>・layer-collector/<version> のタグ）
-    # 新しいバージョンが出たら、.github/workflows/update-otel-lambda-layers.yml がこの ARN と
-    # pyproject.toml・uv.lock の OTel の依存を一緒に上げる PR を作る（ローカルと本番をそろえる。
-    # 自前の urllib のレイヤーも uv.lock のバージョンで作る）。手で上げるときも、両方を同じバージョンにする
-    "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-python-0_21_0:1",
-    "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-collector-amd64-0_24_0:1",
-  ]
-}
-
 variable "otel_urllib_layer_zip_path" {
   description = "Path to the zip of the Lambda layer with opentelemetry-instrumentation-urllib (built by scripts/build-otel-urllib-layer.py)"
   type        = string
