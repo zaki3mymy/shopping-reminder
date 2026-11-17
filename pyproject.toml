@@ -10,10 +10,10 @@ requires-python = ">=3.13"
 # レイヤーと一緒に .github/workflows/update-otel-lambda-layers.yml が上げる。
 # 自前の urllib の計装のレイヤー（scripts/build-otel-urllib-layer.py）は、uv.lock のバージョンで作る
 dependencies = [
-    "opentelemetry-distro==0.65b0",
-    "opentelemetry-exporter-otlp-proto-http==1.44.0",
-    "opentelemetry-instrumentation-aws-lambda==0.65b0",
-    "opentelemetry-instrumentation-urllib==0.65b0",
+    "opentelemetry-distro==0.66b1",
+    "opentelemetry-exporter-otlp-proto-http==1.45.1",
+    "opentelemetry-instrumentation-aws-lambda==0.66b1",
+    "opentelemetry-instrumentation-urllib==0.66b1",
 ]
 
 [tool.uv]
