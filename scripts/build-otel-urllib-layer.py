@@ -5,8 +5,8 @@ OTel のコミュニティの Python 計装レイヤーには urllib の計装�
 自前のレイヤーで足す。urllib の計装が無いと、Notion API と通知 API の呼び出しの span が出ず、
 通知 API（nandemo-oshirase）に traceparent も付かない（docs/DEPLOYMENT.md を参照）。
 
-- バージョンは uv.lock のものを使う（pyproject.toml の dev グループに入れている）。
-  uv.lock の OTel の依存は、コミュニティのレイヤーと同じバージョンに固定している
+- バージョンは uv.lock のものを使う。uv.lock の OTel の依存は、
+  コミュニティのレイヤーと同じバージョンに固定している
 - 依存するパッケージ（opentelemetry-instrumentation など）は
   コミュニティのレイヤーにあるので、--no-deps で入れる
 - zip は、同じバージョンなら毎回同じ中身（ハッシュ）になるように作る。

@@ -4,10 +4,16 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-# OTel のパッケージは、本番の OTel のコミュニティの Lambda レイヤー（layer-python）と同じバージョンに固定する。
-# レイヤーと一緒に .github/workflows/update-otel-lambda-layers.yml が上げる
+# コードが使うのは opentelemetry-api だけ（Lambda の zip は src/shopping_reminder だけで、依存は含めない）。
+# OTel のパッケージは、本番と同じもの（コミュニティの Lambda レイヤー（layer-python）と、自前の urllib の計装の
+# レイヤー）をローカルにも入れ、レイヤーと同じバージョンに固定する。
+# レイヤーと一緒に .github/workflows/update-otel-lambda-layers.yml が上げる。
+# 自前の urllib の計装のレイヤー（scripts/build-otel-urllib-layer.py）は、uv.lock のバージョンで作る
 dependencies = [
-    "opentelemetry-api==1.44.0",
+    "opentelemetry-distro==0.65b0",
+    "opentelemetry-exporter-otlp-proto-http==1.44.0",
+    "opentelemetry-instrumentation-aws-lambda==0.65b0",
+    "opentelemetry-instrumentation-urllib==0.65b0",
 ]
 
 [tool.uv]
@@ -25,9 +31,6 @@ where = ["src"]
 [dependency-groups]
 dev = [
     "mypy>=1.17.1",
-    # 自前の urllib の計装のレイヤー（scripts/build-otel-urllib-layer.py）は、uv.lock のこのバージョンで作る
-    "opentelemetry-instrumentation-urllib==0.65b0",
-    "opentelemetry-sdk==1.44.0",
     "pre-commit>=4.3.0",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
