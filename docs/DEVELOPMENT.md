@@ -1,5 +1,7 @@
 # 開発ガイド
 
+uv のバージョンは `pyproject.toml` の `[tool.uv] required-version` の範囲のものを使う（CI も同じ範囲の uv を使う）。古いときは `uv self update` で上げる。
+
 ## 🧪 テスト
 
 ### テスト方針

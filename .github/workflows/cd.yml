@@ -10,6 +10,7 @@ on:
       - 'terraform/**'
       - 'pyproject.toml'
       - 'uv.lock'
+      - 'scripts/**'
       - '.github/workflows/cd.yml'
       # CD は ci.yml を呼び出すため、ci.yml の変更でも CD の起動に問題がないか確認する
       - '.github/workflows/ci.yml'
@@ -76,6 +77,10 @@ jobs:
 
     - name: Create dist directory
       run: mkdir -p dist
+
+    - name: Build the urllib instrumentation layer
+      # terraform/modules/shopping-reminder/main.tf の aws_lambda_layer_version.otel_urllib が使う zip を作る
+      run: python3 scripts/build-otel-urllib-layer.py
 
     - name: Terraform Init
       run: |
