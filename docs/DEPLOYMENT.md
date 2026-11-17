@@ -115,7 +115,7 @@ Lambda には OTel の Python計装レイヤーと Collectorレイヤー（ど�
 
 - zip は `scripts/build-otel-urllib-layer.py` で作る（CI の terraform-plan と CD で、Terraform の前に実行する）。依存するパッケージはコミュニティのレイヤーにあるので、urllib の計装だけを `--no-deps` で入れる。同じバージョンなら zip のハッシュは変わらないので、レイヤーは作り直されない。
 - バージョンは `uv.lock` のものを使う。`pyproject.toml` の OTel の依存は、本番と同じもの（コミュニティの Python計装レイヤーの `opentelemetry-distro`・`opentelemetry-exporter-otlp-proto-http`・`opentelemetry-instrumentation-aws-lambda` と、自前のレイヤーの `opentelemetry-instrumentation-urllib`）を、レイヤー（タグの `requirements.txt`）と同じバージョンに `==` で固定している（ローカルと本番のバージョンをそろえるため）。コードが使うのは `opentelemetry-api` だけで、zip には依存を含めない。Dependabot では OTel のパッケージを上げない（`.github/dependabot.yml` の `ignore`）。
-- コミュニティのレイヤーの新しいバージョンは、`.github/workflows/update-otel-lambda-layers.yml` が見つけて、`terraform/modules/shopping-reminder/variables.tf` の ARN と `pyproject.toml`・`uv.lock` の OTel の依存を一緒に上げる PR を develop に作る。opentelemetry-lambda のリリースは feed-release-invoke-workflow の `repository_dispatch`（`otel-lambda-release`）で知り、取りこぼしに備えて週1回の `schedule` でも確認する。
+- コミュニティのレイヤーの新しいバージョンは、`.github/workflows/update-otel-lambda-layers.yml` が見つけて、`terraform/modules/shopping-reminder/main.tf` の ARN と `pyproject.toml`・`uv.lock` の OTel の依存を一緒に上げる PR を develop に作る。opentelemetry-lambda のリリースは feed-release-invoke-workflow の `repository_dispatch`（`otel-lambda-release`）で知り、取りこぼしに備えて週1回の `schedule` でも確認する。
 
 #### Grafana Cloud の認証情報
 
