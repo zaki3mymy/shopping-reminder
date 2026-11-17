@@ -42,6 +42,10 @@
 
 Actions の「Create release PR」を手で実行すると、次のバージョンを決めて `release: vX.Y.Z (develop → main)` の PR を作ります（開いていれば、タイトルと本文を最新にします）。本文はリリースノートです。タグは打ちません（main のデプロイの後に CD が打ちます）。マージは人が「Create a merge commit」で行います。
 
+### OTel の Lambda レイヤーを上げる - `update-otel-lambda-layers.yml`
+
+OTel のコミュニティの Lambda レイヤー（Python 計装・Collector）の新しいバージョンが出ていたら、レイヤーの ARN と `pyproject.toml`・`uv.lock` の OTel の依存を上げる PR を develop に作ります（中身は再利用ワークフロー）。opentelemetry-lambda のリリースを feed-release-invoke-workflow の `repository_dispatch`（`otel-lambda-release`）で知るほか、週1回の `schedule` と手での実行（`workflow_dispatch`）でも動きます。詳しくは `docs/DEPLOYMENT.md` の「urllib の計装のレイヤー」を見てください。
+
 ### main → develop の取り込み - `back-merge.yml`
 
 main（タグの付いたコミット）を develop に取り込むため、main と同じコミットを指す一時的なブランチ（`back-merge/<sha>`）から develop への PR を作り、マージコミットでマージします。CD から呼ばれるほか、Actions の「Back-merge main into develop」から手で実行できます。自動のマージに失敗したときは PR が開いたまま残るので、「Create a merge commit」でマージしてください。
@@ -85,6 +89,11 @@ Secrets と Environment（`develop` / `prod`）は、[zaki3mymy/github](https://
 
 - `BACK_MERGE_APP_CLIENT_ID`: PR を作ってマージする GitHub App の Client ID
 - `BACK_MERGE_APP_PRIVATE_KEY`: その GitHub App の秘密鍵
+
+OTel の Lambda レイヤーを上げる PR の作成（`update-otel-lambda-layers.yml`）も、リポジトリの Secrets を参照します。
+
+- `DEPENDENCY_UPDATER_APP_CLIENT_ID`: 依存の更新の PR を作る GitHub App の Client ID
+- `DEPENDENCY_UPDATER_APP_PRIVATE_KEY`: その GitHub App の秘密鍵
 
 ## ローカル開発での活用
 

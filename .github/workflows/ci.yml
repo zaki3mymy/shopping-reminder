@@ -9,6 +9,7 @@ on:
       - 'terraform/**'
       - 'pyproject.toml'
       - 'uv.lock'
+      - 'scripts/**'
       - '.pre-commit-config.yaml'
       - '.python-version'
       - '.github/workflows/ci.yml'
@@ -170,6 +171,10 @@ jobs:
           echo "tf_dir=terraform/environments/dev" >> $GITHUB_OUTPUT
           echo "state_key=shopping-reminder/dev/terraform.tfstate" >> $GITHUB_OUTPUT
         fi
+
+    - name: Build the urllib instrumentation layer
+      # terraform/modules/shopping-reminder/main.tf の aws_lambda_layer_version.otel_urllib が使う zip を作る
+      run: python3 scripts/build-otel-urllib-layer.py
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0

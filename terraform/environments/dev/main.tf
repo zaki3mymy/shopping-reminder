@@ -23,6 +23,8 @@ module "shopping_reminder" {
   lambda_source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   lambda_timeout          = var.lambda_timeout
   lambda_memory_size      = var.lambda_memory_size
+  # scripts/build-otel-urllib-layer.py の出力先
+  otel_urllib_layer_zip_path = "${path.root}/../../../dist/otel-urllib-layer.zip"
 
   # EventBridge configuration
   # dev 環境では定期実行しない（動作確認は CD から dry run なしで呼び出して行う）

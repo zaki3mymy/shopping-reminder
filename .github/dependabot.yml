@@ -23,6 +23,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # OTel のパッケージは、本番の OTel のコミュニティの Lambda レイヤーと同じバージョンに固定している。
+    # レイヤーと一緒に上げる（.github/workflows/update-otel-lambda-layers.yml）ので、Dependabot では上げない
+    ignore:
+      - dependency-name: "opentelemetry-*"
     commit-message:
       prefix: "chore"
       prefix-development: "chore"

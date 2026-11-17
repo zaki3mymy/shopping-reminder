@@ -102,6 +102,7 @@ No modules.
 | [aws_iam_role_policy.lambda_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy_attachment.lambda_basic_execution](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_lambda_function.shopping_reminder](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function) | resource |
+| [aws_lambda_layer_version.otel_urllib](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_layer_version) | resource |
 | [aws_lambda_permission.allow_eventbridge](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission) | resource |
 | [aws_resourcegroups_group.shopping_reminder](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/resourcegroups_group) | resource |
 | [aws_resourcegroups_group.shopping_reminder_all](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/resourcegroups_group) | resource |
@@ -128,6 +129,7 @@ No modules.
 | <a name="input_notion_api_key"></a> [notion\_api\_key](#input\_notion\_api\_key) | Notion API key for accessing the workspace | `string` | n/a | yes |
 | <a name="input_notion_database_id"></a> [notion\_database\_id](#input\_notion\_database\_id) | ID of the Notion database containing shopping list items | `string` | n/a | yes |
 | <a name="input_otel_layer_arns"></a> [otel\_layer\_arns](#input\_otel\_layer\_arns) | ARNs of the OpenTelemetry Lambda layers (Python instrumentation + collector) | `list(string)` | <pre>[<br/>  "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-python-0_21_0:1",<br/>  "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-collector-amd64-0_24_0:1"<br/>]</pre> | no |
+| <a name="input_otel_urllib_layer_zip_path"></a> [otel\_urllib\_layer\_zip\_path](#input\_otel\_urllib\_layer\_zip\_path) | Path to the zip of the Lambda layer with opentelemetry-instrumentation-urllib (built by scripts/build-otel-urllib-layer.py) | `string` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Name of the AWS Resource Group | `string` | `"shopping-reminder-resources"` | no |
 | <a name="input_schedule_enabled"></a> [schedule\_enabled](#input\_schedule\_enabled) | Whether the EventBridge schedule is enabled (disable it in environments that should not send reminders on a schedule) | `bool` | `true` | no |
 | <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | EventBridge schedule expression for the reminder (JST 17:00 = UTC 08:00) | `string` | `"cron(0 8 * * ? *)"` | no |
