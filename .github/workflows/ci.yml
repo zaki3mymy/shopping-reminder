@@ -165,9 +165,11 @@ jobs:
       id: config
       run: |
         if [ "${{ github.base_ref }}" = "main" ]; then
+          echo "env=prod" >> $GITHUB_OUTPUT
           echo "tf_dir=terraform/environments/production" >> $GITHUB_OUTPUT
           echo "state_key=shopping-reminder/terraform.tfstate" >> $GITHUB_OUTPUT
         else
+          echo "env=dev" >> $GITHUB_OUTPUT
           echo "tf_dir=terraform/environments/dev" >> $GITHUB_OUTPUT
           echo "state_key=shopping-reminder/dev/terraform.tfstate" >> $GITHUB_OUTPUT
         fi
@@ -177,25 +179,116 @@ jobs:
       run: python3 scripts/build-otel-urllib-layer.py
 
     - name: Configure AWS credentials
+      id: aws
       uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: ap-northeast-1
+        # terraform の出力の ARN に出るアカウント ID を、ログでマスクする
+        mask-aws-account-id: true
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
       with:
         terraform_version: "~1.9.0"
 
-    - name: Terraform Plan
+    - name: Terraform Init
       run: |
         cd ${{ steps.config.outputs.tf_dir }}
         terraform init \
           -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
           -backend-config="key=${{ steps.config.outputs.state_key }}" \
           -backend-config="region=ap-northeast-1"
-        terraform plan \
+
+    - name: Terraform Plan
+      id: plan
+      # コメント用にファイルにも保存する。shell を明示して pipefail を有効にする
+      shell: bash
+      run: |
+        cd ${{ steps.config.outputs.tf_dir }}
+        terraform plan -no-color \
           -var="notion_api_key=${{ secrets.NOTION_API_KEY }}" \
           -var="notion_database_id=${{ secrets.NOTION_DATABASE_ID }}" \
           -var="notify_api_key=${{ secrets.NOTIFY_API_KEY }}" \
-          -var="notify_api_url=${{ secrets.NOTIFY_API_URL }}"
+          -var="notify_api_url=${{ secrets.NOTIFY_API_URL }}" \
+          2>&1 | tee "$RUNNER_TEMP/plan.txt"
+
+    - name: Comment plan result
+      # plan が失敗した場合も、エラーの内容を PR に残す
+      if: always() && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure')
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        PLAN_FILE: ${{ runner.temp }}/plan.txt
+        PLAN_OUTCOME: ${{ steps.plan.outcome }}
+        TF_ENV: ${{ steps.config.outputs.env }}
+        # コメントから消す値（ログではマスク済み。notion_database_id・notify_api_url は sensitive でないので plan に出る）
+        AWS_ACCOUNT_ID: ${{ steps.aws.outputs.aws-account-id }}
+        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        NOTIFY_API_KEY: ${{ secrets.NOTIFY_API_KEY }}
+        NOTIFY_API_URL: ${{ secrets.NOTIFY_API_URL }}
+      with:
+        script: |
+          const fs = require('fs')
+          let plan = fs.existsSync(process.env.PLAN_FILE)
+            ? fs.readFileSync(process.env.PLAN_FILE, 'utf8')
+            : '(plan の出力がありません)'
+
+          // add-mask はコメントには効かないので、アカウント ID と Secrets の値を *** に置き換える
+          const secrets = ['AWS_ACCOUNT_ID', 'NOTION_API_KEY', 'NOTION_DATABASE_ID', 'NOTIFY_API_KEY', 'NOTIFY_API_URL']
+          for (const v of secrets.map((k) => process.env[k]).filter((v) => v)) {
+            plan = plan.split(v).join('***')
+          }
+
+          // 既存リソースの読み込みの行（Refreshing state... など）を除く
+          const noise = /^\S.*: (Refreshing state\.\.\.|Reading\.\.\.|Read complete after|Preparing import\.\.\.)/
+          plan = plan.split('\n').filter((line) => !noise.test(line)).join('\n').trim()
+
+          // PR のコメントは 65,536 文字までなので、長すぎる場合は末尾を残して切り詰める
+          const limit = 60000
+          if (plan.length > limit) {
+            plan = '... (先頭を省略。全文は Actions のログを参照) ...\n' + plan.slice(-limit)
+          }
+
+          let body = `## Terraform Plan (${process.env.TF_ENV})\n\n`
+          if (process.env.PLAN_OUTCOME !== 'success') {
+            body += ':x: **plan に失敗しました。**\n\n'
+          }
+          if (process.env.PLAN_OUTCOME === 'success' && plan.includes('No changes.')) {
+            body += 'No changes.'
+          } else {
+            body += ['<details>', '<summary>Show plan</summary>', '', '```', plan, '```', '', '</details>'].join('\n')
+          }
+
+          // このワークフローのコメントだと分かる目印（画面には表示されない）。環境ごとに分ける
+          const marker = `<!-- terraform-plan:${process.env.TF_ENV} -->`
+          body = `${marker}\n${body}`
+
+          // 新しくコメントし、最新の plan をいつも一番下に出す
+          const { data: created } = await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body,
+          })
+
+          // それより前の plan のコメントを Outdated として折りたたむ（人やほかのコメントには触らない）
+          const comments = await github.paginate(github.rest.issues.listComments, {
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            per_page: 100,
+          })
+          for (const c of comments) {
+            if (c.id === created.id) continue
+            if (c.user?.login !== 'github-actions[bot]') continue
+            if (!c.body?.startsWith(marker)) continue
+            await github.graphql(
+              `mutation($id: ID!) {
+                minimizeComment(input: { subjectId: $id, classifier: OUTDATED }) {
+                  minimizedComment { isMinimized }
+                }
+              }`,
+              { id: c.node_id },
+            )
+          }
