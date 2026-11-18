@@ -29,6 +29,34 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
   tags = var.tags
 }
 
+# OTel Lambdaレイヤー: Python計装レイヤー + コレクターレイヤー（どちらもコミュニティ製）。
+# 変数の既定値に書くと terraform-docs が README にも ARN を書き、自動で ARN を上げたときに README とずれるので、
+# locals に書く
+locals {
+  otel_layer_arns = [
+    # バージョンは https://github.com/open-telemetry/opentelemetry-lambda/releases で確認
+    # （layer-python/<version>・layer-collector/<version> のタグ）
+    # 新しいバージョンが出たら、.github/workflows/update-otel-lambda-layers.yml がこの ARN と
+    # pyproject.toml・uv.lock の OTel の依存を一緒に上げる PR を作る（ローカルと本番をそろえる。
+    # 自前の urllib のレイヤーも uv.lock のバージョンで作る）。手で上げるときも、両方を同じバージョンにする
+    "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-python-0_22_0:1",
+    "arn:aws:lambda:ap-northeast-1:184161586896:layer:opentelemetry-collector-amd64-0_24_0:1",
+  ]
+}
+
+# urllib の計装（opentelemetry-instrumentation-urllib）だけを入れたレイヤー。
+# コミュニティの Python 計装レイヤーには urllib の計装が無いため、自前で足す
+# （Notion API と通知 API の呼び出しの span を出し、通知 API に traceparent を付ける）。
+# zip は scripts/build-otel-urllib-layer.py で作る（CI の terraform-plan と CD で、terraform の前に実行する）。
+# 同じバージョンなら zip のハッシュは変わらないので、レイヤーは作り直されない
+resource "aws_lambda_layer_version" "otel_urllib" {
+  layer_name          = "${var.lambda_function_name}-otel-urllib"
+  description         = "opentelemetry-instrumentation-urllib for ${var.lambda_function_name}"
+  filename            = var.otel_urllib_layer_zip_path
+  source_code_hash    = filebase64sha256(var.otel_urllib_layer_zip_path)
+  compatible_runtimes = ["python3.13"]
+}
+
 # Lambda function
 resource "aws_lambda_function" "shopping_reminder" {
   filename      = var.lambda_zip_path
@@ -44,7 +72,8 @@ resource "aws_lambda_function" "shopping_reminder" {
   # OTel Lambdaレイヤー: Python計装レイヤー + コレクターレイヤー（どちらもコミュニティ製）
   # zipには opentelemetry パッケージが含まれないため、Layerから提供する
   # AWS_LAMBDA_EXEC_WRAPPER（下記environment）でPython計装レイヤーがhandlerをラップする
-  layers = var.otel_layer_arns
+  # 自前の urllib のレイヤーは、コミュニティのレイヤーのあとに重ねる（どれも /opt/python に展開される）
+  layers = concat(local.otel_layer_arns, [aws_lambda_layer_version.otel_urllib.arn])
 
   environment {
     variables = {
