@@ -27,6 +27,9 @@ EventBridge (Schedule) → AWS Lambda → Notion API
 git clone <repository-url>
 cd shopping-reminder
 
+# 開発に使うツールを PATH に入れる（nix と direnv。docs/DEVELOPMENT.md の「開発環境」を参照）
+direnv allow   # または nix develop
+
 # Python依存関係をインストール（uv使用）
 uv sync --dev
 
