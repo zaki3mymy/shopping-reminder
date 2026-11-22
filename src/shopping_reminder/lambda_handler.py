@@ -34,7 +34,7 @@ class ShoppingReminderProcessor:
     def process(self, dry_run: bool = False) -> NotificationResult:
         """メイン処理を実行
 
-        dry_run が True のときは、通知APIに dry_run で送り、LINE には送信しない
+        dry_run が True のときは、通知APIに dry_run で送り、通知は送信しない
         （デプロイ後の動作確認用）
         """
         span = trace.get_current_span()

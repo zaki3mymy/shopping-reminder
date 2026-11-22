@@ -42,8 +42,7 @@ class NotifyClient:
     ) -> NotificationResult:
         """未チェック項目のリストを通知APIに送信
 
-        dry_run が True のときは、通知APIに dry_run を付けて送る。通知APIは
-        LINE の validate API でメッセージを確認するだけで、LINE には送信しない
+        dry_run が True のときは、通知APIに dry_run を付けて送る（通知は送信されない）
         """
         span = trace.get_current_span()
         span.set_attribute("notify.item_count", len(items))
@@ -69,7 +68,7 @@ class NotifyClient:
                     success=True,
                     message=(
                         f"dry run: {len(items)}件の未チェック項目について通知を確認しました。"
-                        "LINE には送信していません。"
+                        "通知は送信していません。"
                     ),
                 )
 

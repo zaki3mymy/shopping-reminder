@@ -149,7 +149,7 @@ class TestNotifyClient:
 
     @patch("urllib.request.urlopen")
     def test_send_notification_dry_run(self, mock_urlopen: Mock) -> None:
-        """dry run のときは dry_run を付けて送り、LINE には送られない"""
+        """dry run のときは dry_run を付けて送る"""
         mock_response_data = {"message": "Dry run: would send 1 message(s) in 1 batch(es)"}
         mock_response = Mock()
         mock_response.read.return_value = json.dumps(mock_response_data).encode("utf-8")
