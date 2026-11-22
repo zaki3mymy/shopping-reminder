@@ -8,8 +8,10 @@
 
 | ブランチ | デプロイ先 | Terraform | GitHub の Environment | デプロイ後の確認 |
 | --- | --- | --- | --- | --- |
-| `develop` | dev 環境（`dev-shopping-reminder`） | `terraform/environments/dev` | `develop` | Lambda を呼び出し、通知の送信まで確認する |
-| `main` | 本番環境（`shopping-reminder`） | `terraform/environments/production` | `prod` | Lambda を `{"dry_run": true}` で呼び出す（通知は送信しない） |
+| `develop` | dev 環境（`dev-shopping-reminder`） | `terraform/environments/dev` | `develop` | Lambda を `{"dry_run": true}` で呼び出す |
+| `main` | 本番環境（`shopping-reminder`） | `terraform/environments/production` | `prod` | Lambda を `{"dry_run": true}` で呼び出す |
+
+`{"dry_run": true}` で呼び出すと、Notion から未チェック項目を読み、通知API に `"dry_run": true` を付けて送る。通知API は LINE の validate API でメッセージを確認するだけで、LINE には送信しない（LINE の月の送信数を使わない）。未チェック項目がないときは、通知API を呼ばない。
 
 dev 環境では EventBridge の定期実行を無効にしており、テスト用の Notion データベースを使う。
 
