@@ -32,10 +32,9 @@ direnv allow   # または nix develop
 
 # Python依存関係をインストール（uv使用）
 uv sync --dev
-
-# pre-commitフックをインストール
-uv run pre-commit install --install-hooks
 ```
+
+pre-commit のフックは、開発環境に入ったとき（`direnv allow` のあと、または `nix develop`）に自動で入ります。
 
 ### 2. 環境変数設定
 
