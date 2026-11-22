@@ -99,9 +99,8 @@ jobs:
           -var="notify_api_url=${{ secrets.NOTIFY_API_URL }}" \
           -auto-approve
 
-    # dev・本番とも dry run で呼び出す。Notion の読み込みと、通知API への dry_run での送信までを
-    # 確認する。通知API は LINE の validate API で確認するだけで、LINE には送信しない
-    # （LINE の送信には月の上限があり、デプロイのたびに送ると使い切ってしまうため）
+    # dev・本番とも dry run で呼び出す。Notion の読み込みと、通知API への dry_run での
+    # リクエストまでを確認する。通知は送信されない
     - name: Test Lambda deployment
       env:
         PAYLOAD: '{"dry_run": true}'
