@@ -53,13 +53,10 @@ jobs:
           echo "env=prod" >> $GITHUB_OUTPUT
           echo "tf_dir=terraform/environments/production" >> $GITHUB_OUTPUT
           echo "state_key=shopping-reminder/terraform.tfstate" >> $GITHUB_OUTPUT
-          # 本番環境は dry run で呼び出し、通知は送信しない
-          echo 'test_payload={"dry_run": true}' >> $GITHUB_OUTPUT
         else
           echo "env=dev" >> $GITHUB_OUTPUT
           echo "tf_dir=terraform/environments/dev" >> $GITHUB_OUTPUT
           echo "state_key=shopping-reminder/dev/terraform.tfstate" >> $GITHUB_OUTPUT
-          echo 'test_payload={}' >> $GITHUB_OUTPUT
         fi
 
     - name: Configure AWS credentials
@@ -102,11 +99,11 @@ jobs:
           -var="notify_api_url=${{ secrets.NOTIFY_API_URL }}" \
           -auto-approve
 
-    # dev 環境は通知の送信まで確認する（テスト用の Notion データベースを使う）。
-    # 本番環境は dry run で呼び出し、Notion の読み込みまでを確認して通知は送信しない
+    # dev・本番とも dry run で呼び出す。Notion の読み込みと、通知API への dry_run での
+    # リクエストまでを確認する。通知は送信されない
     - name: Test Lambda deployment
       env:
-        PAYLOAD: ${{ steps.config.outputs.test_payload }}
+        PAYLOAD: '{"dry_run": true}'
       run: |
         FUNCTION_NAME=$(cd ${{ steps.config.outputs.tf_dir }} && terraform output -raw lambda_function_name)
 

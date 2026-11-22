@@ -50,7 +50,7 @@ class TestShoppingReminderProcessor:
         assert result.success is True
         assert "2件の未チェック項目について通知を送信しました" in result.message
         mock_notion.query_unchecked_items.assert_called_once()
-        mock_notify.send_notification.assert_called_once_with(unchecked_items)
+        mock_notify.send_notification.assert_called_once_with(unchecked_items, dry_run=False)
 
     @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
@@ -73,7 +73,7 @@ class TestShoppingReminderProcessor:
         assert result.success is True
         assert "未チェック項目はありません" in result.message
         mock_notion.query_unchecked_items.assert_called_once()
-        mock_notify.send_notification.assert_called_once_with([])
+        mock_notify.send_notification.assert_called_once_with([], dry_run=False)
 
     @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
@@ -118,7 +118,7 @@ class TestShoppingReminderProcessor:
 
     @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
-    def test_process_dry_run_skips_notification(
+    def test_process_dry_run_sends_notification_as_dry_run(
         self, mock_notion_client_class: Mock, mock_notify_client_class: Mock
     ) -> None:
         mock_notion = Mock()
@@ -128,15 +128,15 @@ class TestShoppingReminderProcessor:
 
         unchecked_items = [ShoppingItem("1", "牛乳", False), ShoppingItem("2", "パン", False)]
         mock_notion.query_unchecked_items.return_value = unchecked_items
+        expected = NotificationResult(success=True, message="dry run: 2件")
+        mock_notify.send_notification.return_value = expected
 
         processor = ShoppingReminderProcessor(self.config)
         result = processor.process(dry_run=True)
 
-        assert result.success is True
-        assert "dry run" in result.message
-        assert "2件" in result.message
+        assert result == expected
         mock_notion.query_unchecked_items.assert_called_once()
-        mock_notify.send_notification.assert_not_called()
+        mock_notify.send_notification.assert_called_once_with(unchecked_items, dry_run=True)
 
 
 class TestLambdaHandler:

@@ -37,8 +37,13 @@ class NotifyClient:
         logger.info(f"Notify URL: {self.notify_url}")
 
     @_tracer.start_as_current_span("send_notification")
-    def send_notification(self, items: list[ShoppingItem]) -> NotificationResult:
-        """未チェック項目のリストを通知APIに送信"""
+    def send_notification(
+        self, items: list[ShoppingItem], dry_run: bool = False
+    ) -> NotificationResult:
+        """未チェック項目のリストを通知APIに送信
+
+        dry_run が True のときは、通知APIに dry_run を付けて送る（通知は送信されない）
+        """
         span = trace.get_current_span()
         span.set_attribute("notify.item_count", len(items))
         if not items:
@@ -51,9 +56,21 @@ class NotifyClient:
             message = self._format_message(items)
             logger.info(f"Sending notification message: {message}")
 
-            body = {"message": message}
+            body: dict[str, Any] = {"message": message}
+            if dry_run:
+                body["dry_run"] = True
             response_data = self._make_post_request(self.notify_url, body)
             logger.info(f"Notification response: {json.dumps(response_data)}")
+
+            if dry_run:
+                logger.info(f"Dry run: notification validated for {len(items)} items")
+                return NotificationResult(
+                    success=True,
+                    message=(
+                        f"dry run: {len(items)}件の未チェック項目について通知を確認しました。"
+                        "通知は送信していません。"
+                    ),
+                )
 
             logger.info(f"Notification sent successfully for {len(items)} items")
             _notification_counter.add(1)

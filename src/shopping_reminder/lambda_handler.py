@@ -34,8 +34,8 @@ class ShoppingReminderProcessor:
     def process(self, dry_run: bool = False) -> NotificationResult:
         """メイン処理を実行
 
-        dry_run が True のときは、Notion から未チェック項目を取得するところまで実行し、
-        通知は送信しない（デプロイ後の動作確認用）
+        dry_run が True のときは、通知APIに dry_run で送り、通知は送信しない
+        （デプロイ後の動作確認用）
         """
         span = trace.get_current_span()
         span.set_attribute("shopping_reminder.dry_run", dry_run)
@@ -51,19 +51,9 @@ class ShoppingReminderProcessor:
             for item in unchecked_items:
                 logger.info(f"Unchecked item: {item.name} (ID: {item.id})")
 
-            if dry_run:
-                logger.info("Dry run - skipping notification")
-                return NotificationResult(
-                    success=True,
-                    message=(
-                        f"dry run: {len(unchecked_items)}件の未チェック項目があります。"
-                        "通知は送信していません。"
-                    ),
-                )
-
             # 2. 通知を送信（未チェック項目がない場合も含む）
             logger.info("Sending notification")
-            result = self.notify_client.send_notification(unchecked_items)
+            result = self.notify_client.send_notification(unchecked_items, dry_run=dry_run)
 
             if result.success:
                 logger.info(f"Process completed successfully: {result.message}")

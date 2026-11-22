@@ -147,6 +147,38 @@ class TestNotifyClient:
         request = call_args[0][0]
         assert request.get_header("X-api-key") == "test_notify_key"
 
+    @patch("urllib.request.urlopen")
+    def test_send_notification_dry_run(self, mock_urlopen: Mock) -> None:
+        """dry run のときは dry_run を付けて送る"""
+        mock_response_data = {"message": "Dry run: would send 1 message(s) in 1 batch(es)"}
+        mock_response = Mock()
+        mock_response.read.return_value = json.dumps(mock_response_data).encode("utf-8")
+        mock_response.getcode.return_value = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+
+        items = [ShoppingItem("1", "牛乳", False), ShoppingItem("2", "パン", False)]
+        result = self.client.send_notification(items, dry_run=True)
+
+        assert result.success is True
+        assert "dry run" in result.message
+        assert "2件" in result.message
+        request = mock_urlopen.call_args[0][0]
+        body = json.loads(request.data.decode("utf-8"))
+        assert body["dry_run"] is True
+        assert "牛乳" in body["message"]
+
+    @patch("urllib.request.urlopen")
+    def test_send_notification_without_dry_run_has_no_dry_run_key(self, mock_urlopen: Mock) -> None:
+        mock_response = Mock()
+        mock_response.read.return_value = b'{"message": "Successfully sent 1 message(s)"}'
+        mock_response.getcode.return_value = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+
+        self.client.send_notification([ShoppingItem("1", "牛乳", False)])
+
+        request = mock_urlopen.call_args[0][0]
+        assert "dry_run" not in json.loads(request.data.decode("utf-8"))
+
 
 class TestNotifyAPIError:
     def test_notify_api_error_creation(self) -> None:
