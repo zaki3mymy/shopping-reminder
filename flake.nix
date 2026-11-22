@@ -21,8 +21,9 @@
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             # Python 本体は入れない。uv が .python-version を見て入れる（CI の setup-uv と同じ）
-            # pre-commit・ruff などの Python のツールは、uv.lock で管理する（uv run で使う）
+            # ruff などの Python のツールは、uv.lock で管理する（uv run で使う）
             uv
+            pre-commit
             # pre-commit のフックで使う
             git-secrets
             tflint
@@ -31,6 +32,11 @@
             nodejs
             # terraform は unfree でビルド済みのものがなく、ソースからのビルドに時間がかかるので入れない（別に入れる）
           ];
+
+          # 開発環境に入ったときに、pre-commit のフックを入れる（入っていれば何もしない）
+          shellHook = ''
+            pre-commit install
+          '';
         };
       }
     );
