@@ -32,9 +32,6 @@ direnv allow   # または nix develop
 
 # Python依存関係をインストール（uv使用）
 uv sync --dev
-
-# pre-commitフックをインストール
-uv run pre-commit install --install-hooks
 ```
 
 ### 2. 環境変数設定
