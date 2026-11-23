@@ -28,7 +28,7 @@ module "shopping_reminder" {
   lambda_function_name = "shopping-reminder"
   schedule_expression  = "cron(0 8 * * ? *)"  # JST 17:00 = UTC 08:00
   lambda_timeout       = 30
-  lambda_memory_size   = 128
+  lambda_memory_size   = 256
 
   tags = {
     Environment = "production"
@@ -120,7 +120,7 @@ No modules.
 | <a name="input_grafana_otlp_auth_parameter"></a> [grafana\_otlp\_auth\_parameter](#input\_grafana\_otlp\_auth\_parameter) | Name of the SSM parameter that holds the Authorization header value for Grafana Cloud OTLP (managed outside this repository) | `string` | n/a | yes |
 | <a name="input_grafana_otlp_endpoint"></a> [grafana\_otlp\_endpoint](#input\_grafana\_otlp\_endpoint) | OTLP endpoint of Grafana Cloud (the stack's OTLP URL with /otlp appended). The otlphttp exporter appends /v1/traces and /v1/metrics | `string` | `"https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp"` | no |
 | <a name="input_lambda_function_name"></a> [lambda\_function\_name](#input\_lambda\_function\_name) | Name of the Lambda function | `string` | `"shopping-reminder"` | no |
-| <a name="input_lambda_memory_size"></a> [lambda\_memory\_size](#input\_lambda\_memory\_size) | Lambda function memory size in MB | `number` | `128` | no |
+| <a name="input_lambda_memory_size"></a> [lambda\_memory\_size](#input\_lambda\_memory\_size) | Lambda function memory size in MB | `number` | `256` | no |
 | <a name="input_lambda_source_code_hash"></a> [lambda\_source\_code\_hash](#input\_lambda\_source\_code\_hash) | Base64 encoded hash of the Lambda zip file | `string` | n/a | yes |
 | <a name="input_lambda_timeout"></a> [lambda\_timeout](#input\_lambda\_timeout) | Lambda function timeout in seconds | `number` | `30` | no |
 | <a name="input_lambda_zip_path"></a> [lambda\_zip\_path](#input\_lambda\_zip\_path) | Path to the Lambda deployment zip file | `string` | n/a | yes |
