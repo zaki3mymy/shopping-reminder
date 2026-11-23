@@ -57,7 +57,7 @@ variable "lambda_timeout" {
 variable "lambda_memory_size" {
   description = "Lambda function memory size in MB"
   type        = number
-  default     = 128
+  default     = 256
 }
 
 variable "cloudwatch_log_retention_days" {
