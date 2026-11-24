@@ -86,18 +86,26 @@ cat response.json
 
 ### OTel テレメトリ（Grafana Cloud）
 
-Lambda には OTel の Python計装レイヤーと Collectorレイヤー（どちらも [opentelemetry-lambda](https://github.com/open-telemetry/opentelemetry-lambda) のコミュニティ製）をアタッチしている。アプリが送ったトレース・メトリクスを Collector が受け取り、Grafana Cloud に OTLP で送る。
+Lambda には OTel の Python計装レイヤーと Collectorレイヤー（どちらも [opentelemetry-lambda](https://github.com/open-telemetry/opentelemetry-lambda) のコミュニティ製）をアタッチしている。アプリが送ったトレース・メトリクス・ログを Collector が受け取り、Grafana Cloud に OTLP で送る。
 
 | テレメトリ | バックエンド | 確認方法 |
 | --- | --- | --- |
 | トレース | Grafana Cloud（Tempo） | Grafana の Explore（データソース: Tempo） |
 | メトリクス | Grafana Cloud（Prometheus 互換） | Grafana の Explore（データソース: Prometheus） |
+| ログ | Grafana Cloud（Loki） | Grafana の Explore（データソース: Loki）。`{service_name="shopping-reminder"}` で絞り込む |
 
 - Collector の設定は `src/shopping_reminder/collector.yaml` にまとめており、デプロイ時に Lambda の zip に含まれる。
-- zip には `opentelemetry` パッケージを含めず、Python計装レイヤーが提供する。計装レイヤーは `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler` でハンドラーをラップし、Lambda の呼び出しの span を作る。`urllib` のリクエスト（Notion API・通知API）の span は、自前の urllib の計装のレイヤーが作る（下記）。
+- zip には `opentelemetry` パッケージを含めず、Python計装レイヤーが提供する。計装レイヤーは `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler` でハンドラーをラップし、Lambda の呼び出しの span を作る。`urllib` のリクエスト（Notion API・通知API）の span と、`logging` のログの送信は、自前の計装のレイヤーが行う（下記）。
 - 環境は、リソース属性 `deployment.environment.name`（と `deployment.environment`）の `dev`・`prod` で区別する。
 - コールドスタートのときは、実行環境の初期化が `init <関数名>`（属性 `faas.coldstart=true`）という span になり、そのとき呼ばれた実行と同じトレースに入る（Collector の `telemetryapi` receiver と `coldstart` processor）。
 - 計装が付ける属性のうち、URL（`http.url`・`url.full`。Notion のデータベース ID と通知先の API Gateway のホストを含む）、AWS のアカウント ID（`cloud.account.id`）、関数の ARN（`cloud.resource_id`）は、Collector で消してから送る（`attributes/redact`・`resource/redact`）。そのため、urllib のメトリクス（`http.client.duration` など）では Notion と通知API を区別できない。トレースでは親の span（`query_unchecked_items`・`send_notification`）で区別できる。
+- ログは、アプリの `logging` のログを `opentelemetry-instrumentation-logging`（自前の計装のレイヤー）が OTel のログにして送る。この計装はルートロガーにハンドラーを付けるので、アプリのロガー（`logger.py` の `get_logger`）は自分ではハンドラーを持たず、ルートロガーに任せる。CloudWatch Logs には、Lambda のランタイムのハンドラーが今までどおり出す。ログにはそのときの span の `trace_id`・`span_id` が付くので、Grafana でトレースとログを行き来できる。
+- Lambda の計装は、実行の終わりにトレースとメトリクスしか flush しない。ログは SDK がまとめて送るので、そのままでは応答を返したあとに実行環境が凍結され、次の呼び出しまで送られない（実行環境が止まると失われる）ことがある。そのため、`handler` の最後（例外のときも）でログを flush している（`lambda_handler.py` の `flush_logs`）。
+- ログの本文には、トレースやメトリクスでは消している値が入る。Collector で次の値を `***` に置き換えてから送る（`transform/redact_log_body`）。CloudWatch Logs には元のまま出る。
+  - ARN の中の AWS のアカウント ID と、EventBridge のイベントの `"account"`（`Event: ...` のログ）
+  - 通知先の API Gateway のホスト（`Notify URL: ...` など）
+  - Notion のデータベース ID（Lambda の環境変数 `NOTION_DATABASE_ID` と同じ文字列。Notion の URL のログにも入る）
+- ほかはそのまま送るので、未チェック項目の名前と ID（`Unchecked item: ...`）も含まれる。
 
 アプリが作る span とメトリクス：
 
@@ -111,12 +119,17 @@ Lambda には OTel の Python計装レイヤーと Collectorレイヤー（ど�
 
 メトリクスは累積値（cumulative）で送る。1日1回の実行でほぼ毎回コールドスタートになり、カウンタは毎回 0 から数え直すため、Grafana では `increase()` ではなく、その日の値（例: `max_over_time(...[1d])`）で見る。本番の CD の dry run の実行も記録されるので、未チェック項目の数は属性 `dry_run` で絞り込む。
 
-#### urllib の計装のレイヤー
+#### 自前の計装のレイヤー
 
-コミュニティの Python計装レイヤーには urllib の計装（`opentelemetry-instrumentation-urllib`）が入っていない。urllib の計装が無いと、Notion API と通知API の呼び出しの span が出ず、通知API（nandemo-oshirase）へのリクエストに `traceparent` も付かないので、nandemo-oshirase と1つのトレースにならない。そのため、urllib の計装だけを入れたレイヤーを自前で作り、コミュニティのレイヤーに重ねている（`terraform/modules/shopping-reminder/main.tf` の `aws_lambda_layer_version.otel_urllib`）。
+コミュニティの Python計装レイヤーには、次の計装が入っていない。そのため、これらを入れたレイヤーを自前で作り、コミュニティのレイヤーに重ねている（`terraform/modules/shopping-reminder/main.tf` の `aws_lambda_layer_version.otel_instrumentations`）。
 
-- zip は `scripts/build-otel-urllib-layer.py` で作る（CI の terraform-plan と CD で、Terraform の前に実行する）。依存するパッケージはコミュニティのレイヤーにあるので、urllib の計装だけを `--no-deps` で入れる。同じバージョンなら zip のハッシュは変わらないので、レイヤーは作り直されない。
-- バージョンは `uv.lock` のものを使う。`pyproject.toml` の OTel の依存は、本番と同じもの（コミュニティの Python計装レイヤーの `opentelemetry-distro`・`opentelemetry-exporter-otlp-proto-http`・`opentelemetry-instrumentation-aws-lambda` と、自前のレイヤーの `opentelemetry-instrumentation-urllib`）を、レイヤー（タグの `requirements.txt`）と同じバージョンに `==` で固定している（ローカルと本番のバージョンをそろえるため）。コードが使うのは `opentelemetry-api` だけで、zip には依存を含めない。Dependabot では OTel のパッケージを上げない（`.github/dependabot.yml` の `ignore`）。
+| 計装 | 無いと |
+| --- | --- |
+| `opentelemetry-instrumentation-urllib` | Notion API と通知API の呼び出しの span が出ず、通知API（nandemo-oshirase）へのリクエストに `traceparent` も付かないので、nandemo-oshirase と1つのトレースにならない |
+| `opentelemetry-instrumentation-logging` | `logging` のログが OTel のログとして送られない |
+
+- zip は `scripts/build-otel-instrumentations-layer.py` で作る（CI の terraform-plan と CD で、Terraform の前に実行する）。依存するパッケージはコミュニティのレイヤーにあるので、これらの計装だけを `--no-deps` で入れる。計装を足すときは、スクリプトの `PACKAGES` と `pyproject.toml` の両方に足す。同じバージョンなら zip のハッシュは変わらないので、レイヤーは作り直されない。
+- バージョンは `uv.lock` のものを使う。`pyproject.toml` の OTel の依存は、本番と同じもの（コミュニティの Python計装レイヤーの `opentelemetry-distro`・`opentelemetry-exporter-otlp-proto-http`・`opentelemetry-instrumentation-aws-lambda` と、自前のレイヤーの `opentelemetry-instrumentation-urllib`・`opentelemetry-instrumentation-logging`）を、レイヤー（タグの `requirements.txt`）と同じバージョンに `==` で固定している（ローカルと本番のバージョンをそろえるため）。コードが使うのは `opentelemetry-api` だけで、zip には依存を含めない。Dependabot では OTel のパッケージを上げない（`.github/dependabot.yml` の `ignore`）。
 - コミュニティのレイヤーの新しいバージョンは、`.github/workflows/update-otel-lambda-layers.yml` が見つけて、`terraform/modules/shopping-reminder/main.tf` の ARN と `pyproject.toml`・`uv.lock` の OTel の依存を一緒に上げる PR を develop に作る。opentelemetry-lambda のリリースは feed-release-invoke-workflow の `repository_dispatch`（`otel-lambda-release`）で知り、取りこぼしに備えて週1回の `schedule` でも確認する。
 
 #### Grafana Cloud の認証情報
@@ -127,6 +140,8 @@ Grafana Cloud に送るための Authorization ヘッダーの値（`Basic <base
 | --- | --- |
 | dev | `/app/grafana/dev/otlp_auth` |
 | prod | `/app/grafana/prod/otlp_auth` |
+
+トークン（Access Policy）には、`traces:write`・`metrics:write`・`logs:write` の権限が要る。`logs:write` が無いと、ログの送信だけが 401/403 で失敗する。
 
 Collector レイヤーは SSM Parameter Store を読めないため、Terraform がこのパラメータを読み、Lambda の環境変数 `GRAFANA_CLOUD_OTLP_AUTH` に渡す。そのため、**この値は Terraform の state と Lambda の環境変数に残る**。送信先（`GRAFANA_CLOUD_OTLP_ENDPOINT`）は秘密ではないので、モジュールの変数 `grafana_otlp_endpoint` の既定値に書いている。値は、Grafana Cloud のスタックの OTLP の URL に `/otlp` を付けたもの。
 
