@@ -3,9 +3,15 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry._logs._internal import ProxyLoggerProvider
+from opentelemetry.sdk._logs import LoggerProvider
 
 from src.shopping_reminder.config import Config, ConfigError
-from src.shopping_reminder.lambda_handler import ShoppingReminderProcessor, handler
+from src.shopping_reminder.lambda_handler import (
+    LOG_FLUSH_TIMEOUT_MILLIS,
+    ShoppingReminderProcessor,
+    handler,
+)
 from src.shopping_reminder.models import NotificationResult, ShoppingItem
 
 
@@ -266,3 +272,44 @@ class TestLambdaHandler:
         assert body["success"] is False
         assert "予期しないエラーが発生しました" in body["message"]
         assert "予期しないエラー" in body["error"]
+
+
+class TestLambdaHandlerFlushLogs:
+    @patch("src.shopping_reminder.lambda_handler.Config")
+    def test_flushes_logs_after_handling(self, mock_config_class: Mock) -> None:
+        mock_config_class.side_effect = Exception("予期しないエラー")
+        provider = Mock(spec=LoggerProvider)
+
+        with patch(
+            "src.shopping_reminder.lambda_handler.get_logger_provider", return_value=provider
+        ):
+            handler({}, None)
+
+        provider.force_flush.assert_called_once_with(timeout_millis=LOG_FLUSH_TIMEOUT_MILLIS)
+
+    def test_flushes_logs_even_when_handling_raises(self) -> None:
+        provider = Mock(spec=LoggerProvider)
+
+        with (
+            patch(
+                "src.shopping_reminder.lambda_handler.get_logger_provider", return_value=provider
+            ),
+            patch("src.shopping_reminder.lambda_handler._handle", side_effect=RuntimeError("boom")),
+            pytest.raises(RuntimeError),
+        ):
+            handler({}, None)
+
+        provider.force_flush.assert_called_once()
+
+    @patch("src.shopping_reminder.lambda_handler.Config")
+    def test_skips_flush_without_sdk(self, mock_config_class: Mock) -> None:
+        # SDK が設定されていないときは、API の ProxyLoggerProvider が返る（force_flush が無い）
+        mock_config_class.side_effect = Exception("予期しないエラー")
+
+        with patch(
+            "src.shopping_reminder.lambda_handler.get_logger_provider",
+            return_value=ProxyLoggerProvider(),
+        ):
+            response = handler({}, None)
+
+        assert response["statusCode"] == 500
