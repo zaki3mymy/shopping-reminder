@@ -47,6 +47,8 @@ processors:
   #   - EventBridge のイベントの "account"（AWS のアカウント ID）
   #   - 通知先（なんでもお知らせくん）の API Gateway のホスト
   #   - Notion のデータベース ID（Lambda の環境変数の値と同じ文字列。Notion の URL にも入る）
+  #   - Notion の API キー（notion_client.py がリクエストのヘッダーをログに書くとき、キーの先頭を出す。
+  #     Authorization ヘッダーの "Bearer <値>" と、Notion のトークンの形（ntn_・secret_ で始まる）の両方を伏せる）
   # error_mode: ignore なので、置き換えに失敗してもログは落とさずに送る。
   # $$ は Collector の設定の $ のエスケープ（"$${1}" は OTTL には "${1}"、つまり 1 番目のキャプチャーとして渡る）
   transform/redact_log_body:
@@ -58,6 +60,8 @@ processors:
           - replace_pattern(body, "(\"account\":\\s*\")[0-9]{12}\"", "$${1}***\"")
           - replace_pattern(body, "[a-z0-9]+\\.execute-api\\.[a-z0-9-]+\\.amazonaws\\.com", "***")
           - replace_pattern(body, "${env:NOTION_DATABASE_ID}", "***")
+          - replace_pattern(body, "Bearer [^'\"\\s]+", "Bearer ***")
+          - replace_pattern(body, "\\b(ntn|secret)_[A-Za-z0-9]+", "***")
   # Lambda の応答を返してから送るようにする（実行の終わりに Grafana Cloud への送信を待たない）。
   # 送り終わるまで実行環境は止められない。パイプラインの最後に置く
   decouple:

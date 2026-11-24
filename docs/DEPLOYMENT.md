@@ -105,6 +105,7 @@ Lambda には OTel の Python計装レイヤーと Collectorレイヤー（ど�
   - ARN の中の AWS のアカウント ID と、EventBridge のイベントの `"account"`（`Event: ...` のログ）
   - 通知先の API Gateway のホスト（`Notify URL: ...` など）
   - Notion のデータベース ID（Lambda の環境変数 `NOTION_DATABASE_ID` と同じ文字列。Notion の URL のログにも入る）
+  - Notion の API キー（`Request headers: ...` のログの `Bearer <値>` と、`ntn_`・`secret_` で始まるトークン）
 - ほかはそのまま送るので、未チェック項目の名前と ID（`Unchecked item: ...`）も含まれる。
 
 アプリが作る span とメトリクス：
