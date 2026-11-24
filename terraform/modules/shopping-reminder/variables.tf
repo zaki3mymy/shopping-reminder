@@ -97,13 +97,13 @@ variable "environment" {
   }
 }
 
-variable "otel_urllib_layer_zip_path" {
-  description = "Path to the zip of the Lambda layer with opentelemetry-instrumentation-urllib (built by scripts/build-otel-urllib-layer.py)"
+variable "otel_instrumentations_layer_zip_path" {
+  description = "Path to the zip of the Lambda layer with the OTel instrumentations missing from the community layer (built by scripts/build-otel-instrumentations-layer.py)"
   type        = string
 }
 
 variable "grafana_otlp_endpoint" {
-  description = "OTLP endpoint of Grafana Cloud (the stack's OTLP URL with /otlp appended). The otlphttp exporter appends /v1/traces and /v1/metrics"
+  description = "OTLP endpoint of Grafana Cloud (the stack's OTLP URL with /otlp appended). The otlphttp exporter appends /v1/traces, /v1/metrics and /v1/logs"
   type        = string
   default     = "https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp"
 }
