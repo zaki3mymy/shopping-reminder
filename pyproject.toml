@@ -3,7 +3,7 @@ name = "shopping-reminder"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 # コードが使うのは opentelemetry-api だけ（Lambda の zip は src/shopping_reminder だけで、依存は含めない）。
 # OTel のパッケージは、本番と同じもの（コミュニティの Lambda レイヤー（layer-python）と、自前の計装の
 # レイヤー（urllib・logging））をローカルにも入れ、レイヤーと同じバージョンに固定する。

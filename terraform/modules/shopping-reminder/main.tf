@@ -54,7 +54,7 @@ resource "aws_lambda_layer_version" "otel_instrumentations" {
   description         = "OTel instrumentations missing from the community layer (urllib, logging) for ${var.lambda_function_name}"
   filename            = var.otel_instrumentations_layer_zip_path
   source_code_hash    = filebase64sha256(var.otel_instrumentations_layer_zip_path)
-  compatible_runtimes = ["python3.13"]
+  compatible_runtimes = ["python3.14"]
 }
 
 # Lambda function
@@ -63,7 +63,7 @@ resource "aws_lambda_function" "shopping_reminder" {
   function_name = var.lambda_function_name
   role          = aws_iam_role.lambda_role.arn
   handler       = "lambda_handler.handler"
-  runtime       = "python3.13"
+  runtime       = "python3.14"
   timeout       = var.lambda_timeout
   memory_size   = var.lambda_memory_size
 

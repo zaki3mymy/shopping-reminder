@@ -71,7 +71,7 @@ shopping-reminder/
 
 ## 📋 要件
 
-- **Python 3.13+** （.python-versionで指定）
+- **Python 3.14+** （.python-versionで指定）
 - **AWS Lambda** 実行環境
 - **Terraform >= 1.2.0**
 - **uv** パッケージマネージャー
