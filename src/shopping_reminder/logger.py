@@ -1,9 +1,15 @@
 import logging
 
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
 
 def get_logger(name: str | None = None) -> logging.Logger:
     """
     アプリケーション用のロガーを取得する共通関数
+
+    ログはルートロガーのハンドラーが出力する。Lambda では、ランタイムのハンドラーが CloudWatch Logs に出し、
+    opentelemetry-instrumentation-logging のハンドラーが OTel のログとして Grafana Cloud に送る。
+    ルートロガーにハンドラーが無いとき（ローカルで python から直接動かすときなど）だけ、標準エラーに出す。
 
     Args:
         name: ロガー名（通常は__name__を指定）
@@ -11,26 +17,10 @@ def get_logger(name: str | None = None) -> logging.Logger:
     Returns:
         設定されたロガーインスタンス
     """
+    # ルートロガーにハンドラーがあるときは何もしない
+    logging.basicConfig(format=LOG_FORMAT)
+
     logger = logging.getLogger(name or __name__)
-
-    # ロガーが既に設定されている場合は再設定をスキップ
-    if logger.handlers:
-        return logger
-
-    # CloudWatchでの可視性を高めるためのログ設定
+    # ルートロガーのレベルに関わらず、INFO 以上を出す
     logger.setLevel(logging.INFO)
-
-    # コンソールハンドラーの作成
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
-
-    # フォーマッターの設定
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-
-    logger.addHandler(handler)
-
-    # 重複ログを防ぐ
-    logger.propagate = False
-
     return logger

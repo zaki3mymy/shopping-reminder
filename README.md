@@ -27,11 +27,11 @@ EventBridge (Schedule) → AWS Lambda → Notion API
 git clone <repository-url>
 cd shopping-reminder
 
+# 開発に使うツールを PATH に入れる（nix と direnv。docs/DEVELOPMENT.md の「開発環境」を参照）
+direnv allow   # または nix develop
+
 # Python依存関係をインストール（uv使用）
 uv sync --dev
-
-# pre-commitフックをインストール
-uv run pre-commit install --install-hooks
 ```
 
 ### 2. 環境変数設定
@@ -71,7 +71,7 @@ shopping-reminder/
 
 ## 📋 要件
 
-- **Python 3.13+** （.python-versionで指定）
+- **Python 3.14+** （.python-versionで指定）
 - **AWS Lambda** 実行環境
 - **Terraform >= 1.2.0**
 - **uv** パッケージマネージャー

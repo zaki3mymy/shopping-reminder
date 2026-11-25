@@ -31,8 +31,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### pre-commitフック
 
-- `uv run pre-commit install --install-hooks` - pre-commitフックをインストール
-- `uv run pre-commit run --all-files` - 全ファイルに対してフックを手動実行
+- pre-commit は flake.nix の devShell で入る。開発環境に入ると（`direnv allow` または `nix develop`）、shellHook がフックを入れる
+- `pre-commit run --all-files` - 全ファイルに対してフックを手動実行
 - フックにはリント、型チェック、末尾空白除去、AWS認証情報チェックが含まれる
 - 単体テストはpre-merge-commitステージで実行される
 
@@ -48,7 +48,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `fixtures/` - テスト用データ
 - `terraform/` - AWSインフラ設定（Googleベストプラクティス準拠）
 - Python パスは `src/` ディレクトリを含むよう設定済み
-- Python 3.13+ を使用（.python-versionで指定）
+- Python 3.14+ を使用（.python-versionで指定）
 
 ## コードスタイル
 
@@ -66,17 +66,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技術仕様
 
-- **言語**: Python 3.13+、コードが使うのは標準ライブラリと `opentelemetry-api` のみ（`opentelemetry` は Lambda の OTel レイヤーが提供し、zip には含めない）。`pyproject.toml` の OTel の依存は、本番のレイヤーと同じもの（`opentelemetry-distro` など）を同じバージョンでローカルにも入れる（`docs/DEPLOYMENT.md` 参照）
+- **言語**: Python 3.14+、コードが使うのは標準ライブラリと `opentelemetry-api` のみ（`opentelemetry` は Lambda の OTel レイヤーが提供し、zip には含めない）。`pyproject.toml` の OTel の依存は、本番のレイヤーと同じもの（`opentelemetry-distro` など）を同じバージョンでローカルにも入れる（`docs/DEPLOYMENT.md` 参照）
 - **AWSサービス**: Lambda、EventBridge（日本時間17時実行）
 - **外部API**: Notion API（データベースクエリ、コメント作成）
-- **オブザーバビリティ**: OpenTelemetry（Lambda の OTel レイヤー）でトレース・メトリクスを Grafana Cloud に送る（`docs/DEPLOYMENT.md` 参照）
+- **オブザーバビリティ**: OpenTelemetry（Lambda の OTel レイヤー）でトレース・メトリクス・ログを Grafana Cloud に送る（`docs/DEPLOYMENT.md` 参照）
 - **開発手法**: TDD（テスト駆動開発）
 - **カバレッジ**: 100%を目標
 
 ## 開発ワークフロー
 
 1. 機能ブランチ作成: `git switch -c feature-x` または `git switch -c fix-x`
-2. 開発環境構築: `uv sync --dev && uv run pre-commit install --install-hooks`
+2. 開発環境構築: `direnv allow`（または `nix develop`）のあと `uv sync --dev`
 3. TDDサイクル: Red → Green → Refactor
 4. 段階的コミット（細かい単位で実装・コミット）
 5. 品質チェック: ruff、mypy、pytestが全て通ることを確認

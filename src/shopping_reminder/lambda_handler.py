@@ -7,9 +7,13 @@ from models import NotificationResult
 from notify_client import NotifyClient
 from notion_client import NotionClient
 from opentelemetry import metrics, trace
+from opentelemetry._logs import get_logger_provider
 from opentelemetry.trace import Status, StatusCode
 
 logger = get_logger(__name__)
+
+# 実行の終わりにログを flush するときに待つ最大の時間。送り先は同じ実行環境の Collector（localhost）
+LOG_FLUSH_TIMEOUT_MILLIS = 5000
 
 _tracer = trace.get_tracer("shopping_reminder")
 _meter = metrics.get_meter("shopping_reminder")
@@ -34,8 +38,8 @@ class ShoppingReminderProcessor:
     def process(self, dry_run: bool = False) -> NotificationResult:
         """メイン処理を実行
 
-        dry_run が True のときは、Notion から未チェック項目を取得するところまで実行し、
-        通知は送信しない（デプロイ後の動作確認用）
+        dry_run が True のときは、通知APIに dry_run で送り、通知は送信しない
+        （デプロイ後の動作確認用）
         """
         span = trace.get_current_span()
         span.set_attribute("shopping_reminder.dry_run", dry_run)
@@ -51,19 +55,9 @@ class ShoppingReminderProcessor:
             for item in unchecked_items:
                 logger.info(f"Unchecked item: {item.name} (ID: {item.id})")
 
-            if dry_run:
-                logger.info("Dry run - skipping notification")
-                return NotificationResult(
-                    success=True,
-                    message=(
-                        f"dry run: {len(unchecked_items)}件の未チェック項目があります。"
-                        "通知は送信していません。"
-                    ),
-                )
-
             # 2. 通知を送信（未チェック項目がない場合も含む）
             logger.info("Sending notification")
-            result = self.notify_client.send_notification(unchecked_items)
+            result = self.notify_client.send_notification(unchecked_items, dry_run=dry_run)
 
             if result.success:
                 logger.info(f"Process completed successfully: {result.message}")
@@ -84,8 +78,29 @@ class ShoppingReminderProcessor:
             )
 
 
+def flush_logs() -> None:
+    """Lambda が実行環境を凍結する前に、OTel のログを送り切る
+
+    Lambda の計装は実行の終わりにトレースとメトリクスしか flush しない。ログは SDK がまとめて送るので、
+    flush しないと次の呼び出しまで送られない（実行環境が止まると失われる）。
+    """
+    provider = get_logger_provider()
+    # opentelemetry-instrument を通さない（SDK が設定されていない）ときは、API の
+    # ProxyLoggerProvider が返り、force_flush が無いので何もしない
+    force_flush = getattr(provider, "force_flush", None)
+    if callable(force_flush):
+        force_flush(timeout_millis=LOG_FLUSH_TIMEOUT_MILLIS)
+
+
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """AWS Lambda のエントリーポイント"""
+    try:
+        return _handle(event, context)
+    finally:
+        flush_logs()
+
+
+def _handle(event: dict[str, Any], context: Any) -> dict[str, Any]:
     logger.info("Lambda handler started")
     logger.info(f"Event: {json.dumps(event) if event else 'No event data'}")
     logger.info(

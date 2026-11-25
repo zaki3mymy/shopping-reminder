@@ -44,7 +44,7 @@ Actions の「Create release PR」を手で実行すると、次のバージョ�
 
 ### OTel の Lambda レイヤーを上げる - `update-otel-lambda-layers.yml`
 
-OTel のコミュニティの Lambda レイヤー（Python 計装・Collector）の新しいバージョンが出ていたら、レイヤーの ARN と `pyproject.toml`・`uv.lock` の OTel の依存を上げる PR を develop に作ります（中身は再利用ワークフロー）。opentelemetry-lambda のリリースを feed-release-invoke-workflow の `repository_dispatch`（`otel-lambda-release`）で知るほか、週1回の `schedule` と手での実行（`workflow_dispatch`）でも動きます。詳しくは `docs/DEPLOYMENT.md` の「urllib の計装のレイヤー」を見てください。
+OTel のコミュニティの Lambda レイヤー（Python 計装・Collector）の新しいバージョンが出ていたら、レイヤーの ARN と `pyproject.toml`・`uv.lock` の OTel の依存を上げる PR を develop に作ります（中身は再利用ワークフロー）。opentelemetry-lambda のリリースを feed-release-invoke-workflow の `repository_dispatch`（`otel-lambda-release`）で知るほか、週1回の `schedule` と手での実行（`workflow_dispatch`）でも動きます。詳しくは `docs/DEPLOYMENT.md` の「自前の計装のレイヤー」を見てください。
 
 ### main → develop の取り込み - `back-merge.yml`
 

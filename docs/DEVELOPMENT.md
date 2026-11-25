@@ -1,6 +1,33 @@
 # 開発ガイド
 
-uv のバージョンは `pyproject.toml` の `[tool.uv] required-version` の範囲のものを使う（CI も同じ範囲の uv を使う）。古いときは `uv self update` で上げる。
+## 開発環境
+
+開発に使うツールは [flake.nix](../flake.nix) で管理する。
+
+| ツール | 用途 |
+| --- | --- |
+| uv | Python と依存関係の管理 |
+| pre-commit | コミット前のチェック。開発環境に入ると、フックが自動で入る（flake.nix の `shellHook`） |
+| git-secrets | 認証情報のコミットのチェック（pre-commit） |
+| tflint | Terraform の lint（pre-commit） |
+| terraform-docs | Terraform のドキュメントの生成（pre-commit） |
+| nodejs | Markdown の lint（`npx -y markdownlint-cli2`） |
+
+次のものは flake に入れていないので、別に入れる。
+
+- Python：uv が `.python-version` を見て入れる（CI の `setup-uv` と同じ）。ruff などの Python のツールは uv.lock で管理し、`uv run` で使う
+- terraform：unfree で cache.nixos.org にビルド済みのものがなく、flake.lock を更新するたびにソースからのビルド（数分）がかかるため。CI では `hashicorp/setup-terraform` で入れる
+
+[direnv](https://direnv.net/) を使うと、このディレクトリに入ったときに自動でツールが PATH に入る（[.envrc](../.envrc)）。direnv を使わないときは `nix develop` を実行する。
+
+```shell
+direnv allow   # または nix develop
+```
+
+- ツールのバージョンは、flake.lock の nixpkgs のコミット（`rev`）で決まる。nixpkgs のコミットを進めると、すべてのツールがまとめて新しくなる。
+  - 更新は Dependabot が週に1回 PR を作る。手で上げるときは `nix flake update` を実行する。
+  - 実際のバージョンは `nix develop -c uv --version` や `nix eval --inputs-from . --raw nixpkgs#uv.version` で確かめられる。
+- uv のバージョンは `pyproject.toml` の `[tool.uv] required-version` の範囲のものを使う（CI も同じ範囲の uv を使う）。nixpkgs を進めて uv が範囲から外れたら、`required-version` と CI の uv を合わせて上げる。
 
 ## 🧪 テスト
 
@@ -57,9 +84,8 @@ pre-commitフックにより以下が自動実行されます：
 ### 開発コマンド
 
 ```bash
-# 開発環境セットアップ
+# 開発環境セットアップ（pre-commit のフックは開発環境に入ったときに自動で入る）
 uv sync --dev
-uv run pre-commit install --install-hooks
 
 # コード品質チェック
 uv run ruff check src/
@@ -73,7 +99,7 @@ terraform fmt -recursive terraform/
 uv run pytest --cov src --cov-branch --cov-report term-missing
 
 # pre-commit 手動実行
-uv run pre-commit run --all-files
+pre-commit run --all-files
 ```
 
 ## 🤝 コントリビューション

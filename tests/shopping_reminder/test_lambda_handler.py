@@ -3,9 +3,15 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry._logs._internal import ProxyLoggerProvider
+from opentelemetry.sdk._logs import LoggerProvider
 
 from src.shopping_reminder.config import Config, ConfigError
-from src.shopping_reminder.lambda_handler import ShoppingReminderProcessor, handler
+from src.shopping_reminder.lambda_handler import (
+    LOG_FLUSH_TIMEOUT_MILLIS,
+    ShoppingReminderProcessor,
+    handler,
+)
 from src.shopping_reminder.models import NotificationResult, ShoppingItem
 
 
@@ -50,7 +56,7 @@ class TestShoppingReminderProcessor:
         assert result.success is True
         assert "2件の未チェック項目について通知を送信しました" in result.message
         mock_notion.query_unchecked_items.assert_called_once()
-        mock_notify.send_notification.assert_called_once_with(unchecked_items)
+        mock_notify.send_notification.assert_called_once_with(unchecked_items, dry_run=False)
 
     @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
@@ -73,7 +79,7 @@ class TestShoppingReminderProcessor:
         assert result.success is True
         assert "未チェック項目はありません" in result.message
         mock_notion.query_unchecked_items.assert_called_once()
-        mock_notify.send_notification.assert_called_once_with([])
+        mock_notify.send_notification.assert_called_once_with([], dry_run=False)
 
     @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
@@ -118,7 +124,7 @@ class TestShoppingReminderProcessor:
 
     @patch("src.shopping_reminder.lambda_handler.NotifyClient")
     @patch("src.shopping_reminder.lambda_handler.NotionClient")
-    def test_process_dry_run_skips_notification(
+    def test_process_dry_run_sends_notification_as_dry_run(
         self, mock_notion_client_class: Mock, mock_notify_client_class: Mock
     ) -> None:
         mock_notion = Mock()
@@ -128,15 +134,15 @@ class TestShoppingReminderProcessor:
 
         unchecked_items = [ShoppingItem("1", "牛乳", False), ShoppingItem("2", "パン", False)]
         mock_notion.query_unchecked_items.return_value = unchecked_items
+        expected = NotificationResult(success=True, message="dry run: 2件")
+        mock_notify.send_notification.return_value = expected
 
         processor = ShoppingReminderProcessor(self.config)
         result = processor.process(dry_run=True)
 
-        assert result.success is True
-        assert "dry run" in result.message
-        assert "2件" in result.message
+        assert result == expected
         mock_notion.query_unchecked_items.assert_called_once()
-        mock_notify.send_notification.assert_not_called()
+        mock_notify.send_notification.assert_called_once_with(unchecked_items, dry_run=True)
 
 
 class TestLambdaHandler:
@@ -266,3 +272,44 @@ class TestLambdaHandler:
         assert body["success"] is False
         assert "予期しないエラーが発生しました" in body["message"]
         assert "予期しないエラー" in body["error"]
+
+
+class TestLambdaHandlerFlushLogs:
+    @patch("src.shopping_reminder.lambda_handler.Config")
+    def test_flushes_logs_after_handling(self, mock_config_class: Mock) -> None:
+        mock_config_class.side_effect = Exception("予期しないエラー")
+        provider = Mock(spec=LoggerProvider)
+
+        with patch(
+            "src.shopping_reminder.lambda_handler.get_logger_provider", return_value=provider
+        ):
+            handler({}, None)
+
+        provider.force_flush.assert_called_once_with(timeout_millis=LOG_FLUSH_TIMEOUT_MILLIS)
+
+    def test_flushes_logs_even_when_handling_raises(self) -> None:
+        provider = Mock(spec=LoggerProvider)
+
+        with (
+            patch(
+                "src.shopping_reminder.lambda_handler.get_logger_provider", return_value=provider
+            ),
+            patch("src.shopping_reminder.lambda_handler._handle", side_effect=RuntimeError("boom")),
+            pytest.raises(RuntimeError),
+        ):
+            handler({}, None)
+
+        provider.force_flush.assert_called_once()
+
+    @patch("src.shopping_reminder.lambda_handler.Config")
+    def test_skips_flush_without_sdk(self, mock_config_class: Mock) -> None:
+        # SDK が設定されていないときは、API の ProxyLoggerProvider が返る（force_flush が無い）
+        mock_config_class.side_effect = Exception("予期しないエラー")
+
+        with patch(
+            "src.shopping_reminder.lambda_handler.get_logger_provider",
+            return_value=ProxyLoggerProvider(),
+        ):
+            response = handler({}, None)
+
+        assert response["statusCode"] == 500

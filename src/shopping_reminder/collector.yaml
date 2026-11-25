@@ -1,5 +1,5 @@
 # Lambda の Collector レイヤー（opentelemetry-lambda のコミュニティ製）の設定。
-# アプリ（Python 計装レイヤー）から OTLP で受けて、Grafana Cloud に otlphttp で送る。
+# アプリ（Python 計装レイヤー）からトレース・メトリクス・ログを OTLP で受けて、Grafana Cloud に otlphttp で送る。
 # 送信先と Authorization ヘッダーの値は、Lambda の環境変数で渡す（terraform/modules/shopping-reminder/main.tf）。
 receivers:
   otlp:
@@ -41,6 +41,27 @@ processors:
         action: delete
       - key: cloud.resource_id
         action: delete
+  # ログの本文で、トレースやメトリクスでは消している値を伏せる（本文はアプリのまま送るため、
+  # 属性のように消せない）。CloudWatch Logs には元のまま出る。
+  #   - ARN の中の AWS のアカウント ID（例: EventBridge のイベントのルールの ARN）
+  #   - EventBridge のイベントの "account"（AWS のアカウント ID）
+  #   - 通知先（なんでもお知らせくん）の API Gateway のホスト
+  #   - Notion のデータベース ID（Lambda の環境変数の値と同じ文字列。Notion の URL にも入る）
+  #   - Notion の API キー（notion_client.py がリクエストのヘッダーをログに書くとき、キーの先頭を出す。
+  #     Authorization ヘッダーの "Bearer <値>" と、Notion のトークンの形（ntn_・secret_ で始まる）の両方を伏せる）
+  # error_mode: ignore なので、置き換えに失敗してもログは落とさずに送る。
+  # $$ は Collector の設定の $ のエスケープ（"$${1}" は OTTL には "${1}"、つまり 1 番目のキャプチャーとして渡る）
+  transform/redact_log_body:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - replace_pattern(body, "(arn:aws[a-z-]*:[a-z0-9-]+:[a-z0-9-]*:)[0-9]{12}", "$${1}***")
+          - replace_pattern(body, "(\"account\":\\s*\")[0-9]{12}\"", "$${1}***\"")
+          - replace_pattern(body, "[a-z0-9]+\\.execute-api\\.[a-z0-9-]+\\.amazonaws\\.com", "***")
+          - replace_pattern(body, "${env:NOTION_DATABASE_ID}", "***")
+          - replace_pattern(body, "Bearer [^'\"\\s]+", "Bearer ***")
+          - replace_pattern(body, "\\b(ntn|secret)_[A-Za-z0-9]+", "***")
   # Lambda の応答を返してから送るようにする（実行の終わりに Grafana Cloud への送信を待たない）。
   # 送り終わるまで実行環境は止められない。パイプラインの最後に置く
   decouple:
@@ -60,4 +81,10 @@ service:
     metrics:
       receivers: [otlp]
       processors: [attributes/redact, resource/redact, decouple]
+      exporters: [otlphttp/grafana_cloud]
+    # アプリの logging のログ（opentelemetry-instrumentation-logging が OTel のログにする）。
+    # Grafana Cloud では Loki に入り、トレース ID・span ID でトレースと紐づく
+    logs:
+      receivers: [otlp]
+      processors: [resource/redact, transform/redact_log_body, decouple]
       exporters: [otlphttp/grafana_cloud]
