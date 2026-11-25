@@ -40,7 +40,7 @@ class Config:
         logger.info("Configuration loaded successfully")
 
     @classmethod
-    def from_dict(cls, config_dict: dict[str, Any]) -> "Config":
+    def from_dict(cls, config_dict: dict[str, Any]) -> Config:
         """辞書から設定を作成"""
         config = cls.__new__(cls)  # __init__を呼ばずにインスタンスを作成
 
